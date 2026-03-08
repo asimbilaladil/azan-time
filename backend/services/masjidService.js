@@ -10,12 +10,12 @@ const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; AzanTime/1.0)', 'Accep
 async function searchMosques(query) {
   const url = `${BASE}/Masjid/GetPublicFilteredMasjid?searchParam=${encodeURIComponent(query)}&isPublished=1`;
   const r   = await axios.get(url, { headers: HEADERS, timeout: 8000 });
-  const list = r.data?.data || r.data || [];
+  const list = r.data?.model?.masjidList || r.data?.data || [];
   return list.map(m => ({
-    guid:    m.GuidId || m.guidId,
-    name:    m.MasjidName || m.masjidName || m.name,
-    city:    m.City    || m.city    || '',
-    country: m.Country || m.country || '',
+    guid:    m.guidId    || m.GuidId,
+    name:    m.name      || m.MasjidName,
+    city:    m.cityId    || m.City    || m.city    || '',
+    country: m.countryId || m.Country || m.country || '',
   })).filter(m => m.guid && m.name);
 }
 
