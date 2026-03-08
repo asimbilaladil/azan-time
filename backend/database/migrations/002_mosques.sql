@@ -2,7 +2,6 @@
 
 USE azantime;
 
--- New mosques table (cache of my-masjid.com data)
 CREATE TABLE IF NOT EXISTS mosques (
   guid        VARCHAR(36) PRIMARY KEY,
   name        VARCHAR(255) NOT NULL,
@@ -21,7 +20,9 @@ CREATE TABLE IF NOT EXISTS mosques (
   INDEX idx_times_date (times_date)
 ) ENGINE=InnoDB;
 
--- Add mosque_guid to users, keep old cols for now (drop later)
+-- Add mosque_guid to users
 ALTER TABLE users
-  ADD COLUMN IF NOT EXISTS mosque_guid VARCHAR(36) DEFAULT NULL,
-  ADD INDEX IF NOT EXISTS idx_mosque_guid (mosque_guid);
+ADD COLUMN mosque_guid VARCHAR(36) DEFAULT NULL;
+
+-- Create index
+CREATE INDEX idx_mosque_guid ON users(mosque_guid);
