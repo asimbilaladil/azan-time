@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # ── MySQL ──────────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: azantime-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./backend/database/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - azantime-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend ────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: azantime-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - azantime-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend/nextjs-app
+      dockerfile: Dockerfile
+    container_name: azantime-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./frontend/nextjs-app/.env.local
+    networks:
+      - azantime-net
+
+networks:
+  azantime-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
