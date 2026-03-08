@@ -1,159 +1,164 @@
-'use client'
-import { Suspense, useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
-import axios from 'axios'
+import Link from 'next/link'
 
-interface City {
-  id: number
-  name: string
-  country: string
-  timezone: string
-  calculation_method: string
-}
-
-const METHODS = [
-  { value: 'MuslimWorldLeague', label: 'Muslim World League (Europe, Far East)' },
-  { value: 'ISNA',              label: 'ISNA — North America' },
-  { value: 'Egyptian',          label: 'Egyptian General Authority' },
-  { value: 'Karachi',           label: 'University of Islamic Sciences, Karachi' },
-  { value: 'UmmAlQura',         label: 'Umm Al-Qura — Saudi Arabia' },
-  { value: 'Turkey',            label: 'Turkey (Diyanet)' },
-  { value: 'MoonsightingCommittee', label: 'Moonsighting Committee (UK)' },
-  { value: 'Singapore',         label: 'MUIS — Singapore / Malaysia / Indonesia' },
-]
-
-const API = process.env.NEXT_PUBLIC_API_URL || '/api'
-
-function ConnectForm() {
-  const params = useSearchParams()
-  const router = useRouter()
-  const tokenParam = params.get('token')
-
-  const [isLinked, setIsLinked] = useState(false)
-  const [cities, setCities]     = useState<City[]>([])
-  const [cityId, setCityId]     = useState('')
-  const [method, setMethod]     = useState('MuslimWorldLeague')
-  const [saving, setSaving]     = useState(false)
-  const [saved, setSaved]       = useState(false)
-  const [error, setError]       = useState('')
-
-  useEffect(() => {
-    if (tokenParam) {
-      localStorage.setItem('jwt', tokenParam)
-    }
-    const jwt = localStorage.getItem('jwt')
-    setIsLinked(!!jwt)
-    axios.get(`${API}/cities`).then(r => setCities(r.data)).catch(() => {})
-  }, [tokenParam])
-
-  const handleSave = async () => {
-    const jwt = localStorage.getItem('jwt')
-    if (!jwt || !cityId) return
-    setSaving(true)
-    setError('')
-    try {
-      await axios.put(
-        `${API}/user/settings`,
-        { city_id: parseInt(cityId), calculation_method: method },
-        { headers: { Authorization: `Bearer ${jwt}` } }
-      )
-      setSaved(true)
-      setTimeout(() => router.push('/setup'), 1500)
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save. Please try again.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
+export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">🕌</div>
-          <h1 className="text-2xl font-bold text-slate-800">Azan Time</h1>
-          <p className="text-slate-500 mt-1 text-sm">Setup your automatic Adhan</p>
+    <main className="min-h-screen" style={{ background: 'var(--cream)' }}>
+
+      {/* Hero — full emerald panel */}
+      <section className="pattern-bg relative overflow-hidden" style={{ minHeight: '100vh' }}>
+
+        {/* Decorative gold arc top-right */}
+        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-10"
+          style={{ border: '60px solid var(--gold)' }} />
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10"
+          style={{ border: '40px solid var(--gold)' }} />
+
+        {/* Decorative arc bottom-left */}
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full opacity-10"
+          style={{ border: '50px solid var(--gold)' }} />
+
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-20 text-center">
+
+          {/* Crescent + minaret icon row */}
+          <div className="animate-fade-up animate-delay-1 mb-6 flex items-center gap-3">
+            <div className="h-px w-12 opacity-40" style={{ background: 'var(--gold)' }} />
+            <span style={{ color: 'var(--gold)', fontSize: '13px', letterSpacing: '4px', fontFamily: 'DM Sans' }} className="uppercase font-light">
+              Automatic Adhan
+            </span>
+            <div className="h-px w-12 opacity-40" style={{ background: 'var(--gold)' }} />
+          </div>
+
+          <h1 className="font-display animate-fade-up animate-delay-2"
+            style={{ fontSize: 'clamp(56px, 10vw, 100px)', fontWeight: 300, color: 'white', lineHeight: 1.05, letterSpacing: '-1px' }}>
+            Azan<br />
+            <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Time</em>
+          </h1>
+
+          <p className="animate-fade-up animate-delay-3 mt-6 max-w-md"
+            style={{ color: 'rgba(255,255,255,0.65)', fontSize: '17px', lineHeight: 1.7, fontWeight: 300 }}>
+            Hear the Adhan on your Alexa device at every prayer — automatically, beautifully, hands-free.
+          </p>
+
+          <div className="animate-fade-up animate-delay-4 mt-12 flex flex-col sm:flex-row gap-4">
+            <Link href="/connect"
+              className="group relative px-10 py-4 rounded-full font-medium transition-all duration-300"
+              style={{ background: 'var(--gold)', color: 'var(--ink)', fontSize: '15px', letterSpacing: '0.5px' }}>
+              <span className="relative z-10">Connect with Amazon →</span>
+              <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: 'var(--gold-light)' }} />
+            </Link>
+            <Link href="/dashboard"
+              className="px-10 py-4 rounded-full font-light transition-all duration-300"
+              style={{ border: '1px solid rgba(255,255,255,0.25)', color: 'rgba(255,255,255,0.8)', fontSize: '15px' }}>
+              My Dashboard
+            </Link>
+          </div>
+
+          {/* Prayer times preview */}
+          <div className="animate-fade-up animate-delay-5 mt-20 grid grid-cols-5 gap-2 sm:gap-4 max-w-lg w-full">
+            {[
+              { name: 'Fajr',    ar: 'الفجر',   time: '05:14' },
+              { name: 'Dhuhr',   ar: 'الظهر',   time: '12:38' },
+              { name: 'Asr',     ar: 'العصر',   time: '15:52' },
+              { name: 'Maghrib', ar: 'المغرب',  time: '18:29' },
+              { name: 'Isha',    ar: 'العشاء',  time: '20:05' },
+            ].map((p) => (
+              <div key={p.name} className="rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="font-display text-base mb-0.5" style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>{p.ar}</div>
+                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', letterSpacing: '1px' }} className="uppercase mb-1">{p.name}</div>
+                <div className="font-display font-light" style={{ color: 'white', fontSize: '18px' }}>{p.time}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Scroll hint */}
+          <div className="animate-fade-up animate-delay-6 mt-16 flex flex-col items-center gap-2"
+            style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', letterSpacing: '2px' }}>
+            <span className="uppercase">Scroll</span>
+            <div className="w-px h-8" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)' }} />
+          </div>
         </div>
+      </section>
 
-        {!isLinked ? (
-          <div className="text-center">
-            <p className="text-slate-600 mb-6 text-sm leading-relaxed">
-              Connect your Amazon account to link your Alexa devices and enable automatic Adhan.
-            </p>
-            <a
-              href={`${API}/auth/lwa`}
-              className="inline-block bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-8 py-3 rounded-xl transition-colors w-full text-center"
-            >
-              Connect Amazon Account
-            </a>
-            <p className="text-xs text-slate-400 mt-4">
-              We only request your profile and device access. No passwords stored.
-            </p>
+      {/* How it works — cream section */}
+      <section className="px-6 py-24" style={{ background: 'var(--cream)' }}>
+        <div className="max-w-3xl mx-auto">
+
+          <div className="ornament mb-4">
+            <span style={{ color: 'var(--gold)', fontSize: '11px', letterSpacing: '4px' }} className="uppercase">How it works</span>
           </div>
-        ) : (
-          <div className="space-y-5">
-            <div className="flex items-center gap-2 text-green-600 text-sm bg-green-50 rounded-lg p-3">
-              <span>✅</span>
-              <span>Amazon account linked successfully!</span>
-            </div>
+          <h2 className="font-display text-center mb-16"
+            style={{ fontSize: 'clamp(36px, 6vw, 56px)', fontWeight: 300, color: 'var(--emerald)', lineHeight: 1.15 }}>
+            Three steps to <em>sacred sound</em>
+          </h2>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Select Your City *
-              </label>
-              <select
-                value={cityId}
-                onChange={e => setCityId(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm"
-              >
-                <option value="">Choose a city...</option>
-                {cities.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}, {c.country}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Calculation Method
-              </label>
-              <select
-                value={method}
-                onChange={e => setMethod(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-slate-500 text-sm"
-              >
-                {METHODS.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {error && (
-              <p className="text-red-500 text-sm bg-red-50 rounded-lg p-3">{error}</p>
-            )}
-
-            <button
-              onClick={handleSave}
-              disabled={!cityId || saving}
-              className="w-full bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white font-semibold py-3 rounded-xl transition-colors"
-            >
-              {saved ? '✅ Saved! Redirecting...' : saving ? 'Saving...' : 'Save & Continue →'}
-            </button>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            {[
+              {
+                num: '١',
+                title: 'Link Amazon',
+                desc: 'Securely connect your Amazon account. We use official Login with Amazon — no passwords stored.',
+              },
+              {
+                num: '٢',
+                title: 'Choose Mosque',
+                desc: 'Search and select your local mosque. We fetch real prayer times directly from your mosque.',
+              },
+              {
+                num: '٣',
+                title: 'Hear the Adhan',
+                desc: 'The Adhan plays automatically on your Alexa at every prayer — Fajr through Isha.',
+              },
+            ].map((s) => (
+              <div key={s.num} className="relative group">
+                <div className="font-display mb-4"
+                  style={{ fontSize: '52px', color: 'var(--gold)', opacity: 0.6, lineHeight: 1 }}>
+                  {s.num}
+                </div>
+                <h3 className="font-display mb-2"
+                  style={{ fontSize: '24px', fontWeight: 500, color: 'var(--emerald)' }}>
+                  {s.title}
+                </h3>
+                <p style={{ color: '#5a6672', fontSize: '15px', lineHeight: 1.7, fontWeight: 300 }}>{s.desc}</p>
+                <div className="mt-6 h-px w-12 transition-all duration-500 group-hover:w-24"
+                  style={{ background: 'var(--gold)' }} />
+              </div>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      </section>
+
+      {/* CTA banner */}
+      <section className="px-6 py-20 pattern-bg relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5"
+          style={{ backgroundImage: 'radial-gradient(circle at 70% 50%, var(--gold) 0%, transparent 60%)' }} />
+        <div className="max-w-xl mx-auto text-center relative z-10">
+          <h2 className="font-display mb-4"
+            style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 300, color: 'white', lineHeight: 1.2 }}>
+            Never miss a prayer <em style={{ color: 'var(--gold-light)' }}>again</em>
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '16px', marginBottom: '32px', fontWeight: 300 }}>
+            Set up in under 2 minutes. Free forever.
+          </p>
+          <Link href="/connect"
+            className="inline-block px-12 py-4 rounded-full font-medium transition-all duration-300 hover:scale-105"
+            style={{ background: 'var(--gold)', color: 'var(--ink)', fontSize: '15px' }}>
+            Get Started →
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="px-6 py-8 text-center" style={{ background: 'var(--ink)' }}>
+        <div className="font-display" style={{ color: 'var(--gold)', fontSize: '20px', marginBottom: '4px' }}>
+          Azan Time
+        </div>
+        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '13px' }}>
+          © 2026 · azantime.de
+        </p>
+      </footer>
+
     </main>
-  )
-}
-
-export default function ConnectPage() {
-  return (
-    <Suspense fallback={
-      <main className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-white text-lg">Loading...</div>
-      </main>
-    }>
-      <ConnectForm />
-    </Suspense>
   )
 }
