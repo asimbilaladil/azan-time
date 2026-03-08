@@ -85,6 +85,7 @@ app.use('/api/auth/', rateLimit({
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/auth',         require('./routes/auth'));
 app.use('/api/user',         require('./routes/user'));
+const mosquesRouter = require('./routes/mosques');
 app.use('/api/mosques', mosquesRouter);
 app.use('/api/cities',       require('./routes/cities'));
 app.use('/alexa/smart-home', require('./routes/alexaSmartHome'));
