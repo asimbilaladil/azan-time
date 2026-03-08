@@ -94,6 +94,10 @@ app.use('/alexa/custom',     require('./routes/alexaCustom'));
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', ts: new Date(), env: process.env.NODE_ENV }));
 
+app.get('/privacy', (req, res) => {
+  res.send('<h1>Privacy Policy</h1><p>Azan Time uses your Amazon account to identify you and play the Adhan on your Alexa device. We do not sell or share your data.</p>');
+});
+
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
