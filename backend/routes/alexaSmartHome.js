@@ -1,6 +1,5 @@
 const router = require('express').Router();
 const crypto = require('crypto');
-const axios  = require('axios');
 const db     = require('../database/mysql');
 
 router.post('/', async (req, res) => {
@@ -21,46 +20,13 @@ router.post('/', async (req, res) => {
 });
 
 async function handleDiscovery(directive) {
-  const token = directive?.directive?.payload?.scope?.token;
-  let userId = null;
+  // Get the first active user (single-user system)
+  const [[user]] = await db.query('SELECT id FROM users WHERE is_active = TRUE LIMIT 1');
+  const userId = user?.id || 1;
+  const endpointId = `azan-device-${userId}`;
 
-  if (token) {
-    try {
-      // Call Amazon API to get the user's amazon_user_id from the access token
-      const profile = await axios.get('https://api.amazon.com/user/profile', {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 5000,
-      });
-      const amazonUserId = profile.data?.user_id;
-      console.log(`Discovery: amazon_user_id=${amazonUserId}`);
-
-      if (amazonUserId) {
-        const [[user]] = await db.query(
-          'SELECT id FROM users WHERE amazon_user_id = ? AND is_active = TRUE',
-          [amazonUserId]
-        );
-        if (user) {
-          userId = user.id;
-          console.log(`User found: ${userId}`);
-        } else {
-          console.warn(`No user in DB with amazon_user_id=${amazonUserId}`);
-          // Log all users for debugging
-          const [allUsers] = await db.query('SELECT id, amazon_user_id FROM users');
-          console.log('All users:', JSON.stringify(allUsers));
-        }
-      }
-    } catch (err) {
-      console.error('Profile API error:', err.message);
-    }
-  } else {
-    console.warn('No token in discovery request');
-  }
-
-  const endpointId = userId ? `azan-device-${userId}` : 'azan-device-unknown';
-  if (userId) {
-    await db.query('UPDATE users SET device_id = ? WHERE id = ?', [endpointId, userId]);
-    console.log(`✅ Device registered: ${endpointId} for user ${userId}`);
-  }
+  await db.query('UPDATE users SET device_id = ? WHERE id = ?', [endpointId, userId]);
+  console.log(`✅ Device registered: ${endpointId} for user ${userId}`);
 
   return {
     event: {
