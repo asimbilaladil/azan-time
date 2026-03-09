@@ -117,6 +117,7 @@ mosques                                 ← daily cache of my-masjid.com data
 | POST | `/alexa/smart-home` | Alexa | Smart Home skill endpoint |
 | GET | `/alexa/custom` | Alexa | Custom AudioPlayer skill endpoint |
 | GET | `/privacy` | — | Privacy policy page |
+| GET | `/terms` | — | Terms page |
 
 ---
 
