@@ -1,11 +1,10 @@
 const router = require('express').Router();
 const crypto = require('crypto');
+const axios  = require('axios');
 const db     = require('../database/mysql');
-const { decrypt } = require('../services/encryption');
 
 /**
  * POST /alexa/smart-home
- * Handles all Alexa Smart Home directives.
  */
 router.post('/', async (req, res) => {
   const directive = req.body;
@@ -27,7 +26,6 @@ router.post('/', async (req, res) => {
     if (namespace === 'Alexa.Authorization' && name === 'AcceptGrant') {
       return res.json(handleAcceptGrant(directive));
     }
-    // Unknown directive — respond with empty OK
     res.json({});
   } catch (err) {
     console.error('Smart Home error:', err.message);
@@ -35,29 +33,40 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ── Discovery: expose the virtual "Azan" switch ───────────────────────────────
+// ── Discovery ─────────────────────────────────────────────────────────────────
 async function handleDiscovery(directive) {
   const token = directive?.directive?.payload?.scope?.token;
-
-  // Find the user by matching their decrypted access token
   let userId = null;
+
   if (token) {
-    const [users] = await db.query(
-      'SELECT id, access_token FROM users WHERE is_active = TRUE AND access_token IS NOT NULL'
-    );
-    for (const u of users) {
-      try {
-        if (decrypt(u.access_token) === token) { userId = u.id; break; }
-      } catch {}
+    try {
+      // Call Amazon profile API with the token to get amazon_user_id
+      const profile = await axios.get('https://api.amazon.com/user/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000,
+      });
+      const amazonUserId = profile.data?.user_id;
+      console.log(`Discovery: amazon_user_id=${amazonUserId}`);
+
+      if (amazonUserId) {
+        const [[user]] = await db.query(
+          'SELECT id FROM users WHERE amazon_user_id = ? AND is_active = TRUE',
+          [amazonUserId]
+        );
+        if (user) userId = user.id;
+      }
+    } catch (err) {
+      console.error('Discovery token lookup failed:', err.message);
     }
   }
 
   const endpointId = userId ? `azan-device-${userId}` : 'azan-device-unknown';
 
-  // Persist device_id so scheduler can trigger it
   if (userId) {
     await db.query('UPDATE users SET device_id = ? WHERE id = ?', [endpointId, userId]);
-    console.log(`📱 Device registered: ${endpointId} for user ${userId}`);
+    console.log(`✅ Device registered: ${endpointId} for user ${userId}`);
+  } else {
+    console.warn('⚠️  Discovery: could not match token to a user');
   }
 
   return {
@@ -98,10 +107,10 @@ async function handleDiscovery(directive) {
   };
 }
 
-// ── PowerController: respond to TurnOn / TurnOff ─────────────────────────────
+// ── PowerController ───────────────────────────────────────────────────────────
 async function handlePowerController(directive) {
   const endpointId       = directive?.directive?.endpoint?.endpointId;
-  const dirName          = directive?.directive?.header?.name; // TurnOn | TurnOff
+  const dirName          = directive?.directive?.header?.name;
   const correlationToken = directive?.directive?.header?.correlationToken;
 
   return {
@@ -118,10 +127,10 @@ async function handlePowerController(directive) {
     },
     context: {
       properties: [{
-        namespace:                'Alexa.PowerController',
-        name:                     'powerState',
-        value:                    dirName === 'TurnOn' ? 'ON' : 'OFF',
-        timeOfSample:             new Date().toISOString(),
+        namespace:                 'Alexa.PowerController',
+        name:                      'powerState',
+        value:                     dirName === 'TurnOn' ? 'ON' : 'OFF',
+        timeOfSample:              new Date().toISOString(),
         uncertaintyInMilliseconds: 200,
       }],
     },
@@ -148,7 +157,7 @@ function handleReportState(directive) {
   };
 }
 
-// ── AcceptGrant (account linking) ─────────────────────────────────────────────
+// ── AcceptGrant ───────────────────────────────────────────────────────────────
 function handleAcceptGrant(directive) {
   return {
     event: {
