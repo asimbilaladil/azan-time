@@ -20,14 +20,11 @@ router.post('/', async (req, res) => {
 });
 
 async function handleDiscovery(directive) {
-  // Get the first active user (single-user system)
   const [[user]] = await db.query('SELECT id FROM users WHERE is_active = TRUE LIMIT 1');
   const userId = user?.id || 1;
   const endpointId = `azan-device-${userId}`;
-
   await db.query('UPDATE users SET device_id = ? WHERE id = ?', [endpointId, userId]);
   console.log(`✅ Device registered: ${endpointId} for user ${userId}`);
-
   return {
     event: {
       header: { namespace: 'Alexa.Discovery', name: 'Discover.Response', payloadVersion: '3', messageId: crypto.randomUUID() },
@@ -35,12 +32,13 @@ async function handleDiscovery(directive) {
         endpoints: [{
           endpointId,
           friendlyName: 'Azan',
-          description: 'Automatically plays Adhan at prayer times',
+          description: 'Plays the Adhan automatically at prayer times',
           manufacturerName: 'Azan Time',
-          displayCategories: ['SWITCH'],
-          cookie: {},
+          displayCategories: ['DOORBELL'],
           capabilities: [
-            { type: 'AlexaInterface', interface: 'Alexa.PowerController', version: '3', properties: { supported: [{ name: 'powerState' }], proactivelyReported: false, retrievable: false } },
+            { type: 'AlexaInterface', interface: 'Alexa.DoorbellEventSource', version: '3', properties: { supported: [], proactivelyReported: true, retrievable: false } },
+            { type: 'AlexaInterface', interface: 'Alexa.PowerController', version: '3', properties: { supported: [{ name: 'powerState' }], proactivelyReported: true, retrievable: true } },
+            { type: 'AlexaInterface', interface: 'Alexa.EndpointHealth', version: '3', properties: { supported: [{ name: 'connectivity' }], proactivelyReported: true, retrievable: true } },
             { type: 'AlexaInterface', interface: 'Alexa', version: '3' },
           ],
         }],
