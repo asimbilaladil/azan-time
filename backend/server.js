@@ -24,6 +24,7 @@ const morgan   = require('morgan');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // ── Security headers (T14) ──────────────────────────────────────────────────
 app.use(helmet({
