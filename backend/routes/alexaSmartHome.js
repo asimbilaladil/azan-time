@@ -50,7 +50,7 @@ async function handleDiscovery(directive) {
 
       if (amazonUserId) {
         const [[user]] = await db.query(
-          'SELECT id FROM users WHERE amazon_user_id = ? AND is_active = TRUE',
+          'SELECT id FROM users WHERE amazon_user_id = ? AND is_active = 1',
           [amazonUserId]
         );
         if (user) userId = user.id;
