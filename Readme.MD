@@ -265,12 +265,12 @@ Creates a virtual "Azan" switch — backend turns it ON at prayer time.
 
 ---
 
-### 3. Custom Skill ("Saut Al Adhan")
+### 3. Custom Skill ("Azan Time")
 
 Streams the Adhan MP3 when triggered by the Routine.
 
-1. **Create Skill** → Name: `Saut Al Adhan` · Model: **Custom** · Start from scratch
-2. Invocation name: `saut al adhan`
+1. **Create Skill** → Name: `Azan Time` · Model: **Custom** · Start from scratch
+2. Invocation name: `azan time`
 3. **Interfaces** → enable **Audio Player** ← critical, don't skip
 4. Endpoint → HTTPS → `https://azantime.de/alexa/custom`
    - SSL: "My endpoint has a certificate from a trusted CA"
@@ -279,7 +279,7 @@ Streams the Adhan MP3 when triggered by the Routine.
    {
      "interactionModel": {
        "languageModel": {
-         "invocationName": "saut al adhan",
+         "invocationName": "azan time",
          "intents": [
            { "name": "AMAZON.CancelIntent", "samples": [] },
            { "name": "AMAZON.StopIntent", "samples": [] },
@@ -296,7 +296,7 @@ Streams the Adhan MP3 when triggered by the Routine.
    ALEXA_SKILL_ID=amzn1.ask.skill.YYYY
    ```
 8. `pm2 restart azantime-backend`
-9. Test tab → type `open saut al adhan` → should see `AudioPlayer.Play` ✅
+9. Test tab → type `open azan time` → should see `AudioPlayer.Play` ✅
 
 ---
 
