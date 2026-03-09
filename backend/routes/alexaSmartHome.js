@@ -35,73 +35,95 @@ router.post('/', async (req, res) => {
 
 // ── Discovery ─────────────────────────────────────────────────────────────────
 async function handleDiscovery(directive) {
-  const token = directive?.directive?.payload?.scope?.token;
+
   let userId = null;
 
-  if (token) {
-    try {
-      // Call Amazon profile API with the token to get amazon_user_id
-      const profile = await axios.get('https://api.amazon.com/user/profile', {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 5000,
-      });
-      const amazonUserId = profile.data?.user_id;
-      console.log(`Discovery: amazon_user_id=${amazonUserId}`);
+  try {
 
-      if (amazonUserId) {
-        const [[user]] = await db.query(
-          'SELECT id FROM users WHERE amazon_user_id = ?',
-          [amazonUserId]
-        );
-        if (user) userId = user.id;
+    // Token sent by Alexa after account linking
+    const amazonUserId =
+      directive?.directive?.payload?.scope?.token ||
+      directive?.directive?.endpoint?.scope?.token;
+
+    console.log(`Discovery request received`);
+
+    if (amazonUserId) {
+
+      // Find user in DB
+      const [rows] = await db.query(
+        'SELECT id FROM users WHERE amazon_user_id = ?',
+        [amazonUserId]
+      );
+
+      const user = rows[0];
+
+      if (user) {
+        userId = user.id;
+        console.log(`User found: ${userId}`);
+      } else {
+        console.warn(`User not found for token`);
       }
-    } catch (err) {
-      console.error('Discovery token lookup failed:', err.message);
+
+    } else {
+      console.warn(`No token received in discovery`);
     }
+
+  } catch (err) {
+    console.error('Discovery error:', err.message);
   }
 
   const endpointId = userId ? `azan-device-${userId}` : 'azan-device-unknown';
 
+  // Save device_id in database
   if (userId) {
-    await db.query('UPDATE users SET device_id = ? WHERE id = ?', [endpointId, userId]);
-    console.log(`✅ Device registered: ${endpointId} for user ${userId}`);
-  } else {
-    console.warn('⚠️  Discovery: could not match token to a user');
+    try {
+      await db.query(
+        'UPDATE users SET device_id = ? WHERE id = ?',
+        [endpointId, userId]
+      );
+      console.log(`✅ Device registered: ${endpointId}`);
+    } catch (err) {
+      console.error('Device save error:', err.message);
+    }
   }
 
+  // Alexa response
   return {
     event: {
       header: {
-        namespace:      'Alexa.Discovery',
-        name:           'Discover.Response',
+        namespace: 'Alexa.Discovery',
+        name: 'Discover.Response',
         payloadVersion: '3',
-        messageId:      crypto.randomUUID(),
+        messageId: crypto.randomUUID(),
       },
       payload: {
-        endpoints: [{
-          endpointId,
-          friendlyName:      'Azan',
-          description:       'Plays the Adhan automatically at prayer times',
-          manufacturerName:  'Azan Time',
-          displayCategories: ['SWITCH'],
-          capabilities: [
-            {
-              type:      'AlexaInterface',
-              interface: 'Alexa.PowerController',
-              version:   '3',
-              properties: {
-                supported: [{ name: 'powerState' }],
-                proactivelyReported: true,
-                retrievable: true,
+        endpoints: [
+          {
+            endpointId,
+            manufacturerName: 'Azan Time',
+            friendlyName: 'Azan',
+            description: 'Automatically plays Adhan at prayer times',
+            displayCategories: ['SWITCH'],
+            cookie: {},
+            capabilities: [
+              {
+                type: 'AlexaInterface',
+                interface: 'Alexa.PowerController',
+                version: '3',
+                properties: {
+                  supported: [{ name: 'powerState' }],
+                  proactivelyReported: false,
+                  retrievable: false,
+                },
               },
-            },
-            {
-              type: 'AlexaInterface', interface: 'Alexa.EndpointHealth', version: '3',
-              properties: { supported: [{ name: 'connectivity' }], proactivelyReported: true, retrievable: true },
-            },
-            { type: 'AlexaInterface', interface: 'Alexa', version: '3' },
-          ],
-        }],
+              {
+                type: 'AlexaInterface',
+                interface: 'Alexa',
+                version: '3',
+              },
+            ],
+          },
+        ],
       },
     },
   };
