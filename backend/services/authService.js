@@ -10,7 +10,7 @@ const LWA_PROFILE_URL = 'https://api.amazon.com/user/profile';
 function getLWAAuthURL(state) {
   const params = new URLSearchParams({
     client_id:     process.env.LWA_CLIENT_ID,
-    scope:         'profile',
+    scope:         'profile:user_id',
     response_type: 'code',
     redirect_uri:  process.env.LWA_REDIRECT_URI,
     state,
