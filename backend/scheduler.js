@@ -6,6 +6,7 @@ const { triggerAlexaDevice } = require('./services/alexaTrigger');
 let isRunning = false;
 
 async function runScheduler() {
+  console.log("⏱ Scheduler tick:", new Date().toISOString());
   if (isRunning) {
     console.warn('⚠️  Scheduler: previous run still in progress, skipping tick');
     return;
@@ -22,8 +23,15 @@ async function runScheduler() {
         AND mosque_guid IS NOT NULL
     `);
 
+    console.log("📍 Mosques found:", mosques.length);
+
     for (const { mosque_guid } of mosques) {
+      console.log("🔍 Checking mosque:", mosque_guid);
+
       const prayer = await checkPrayerTimeNow(mosque_guid);
+
+      console.log("🧭 Prayer check result:", prayer);
+      
       if (!prayer) continue;
 
       const [users] = await db.query(`
@@ -31,7 +39,7 @@ async function runScheduler() {
         FROM users
         WHERE mosque_guid = ? AND is_active = TRUE AND device_id IS NOT NULL
       `, [mosque_guid]);
-
+      console.log(`👥 Users with device: ${users.length}`);
       console.log(`🕌 ${prayer.toUpperCase()} — mosque ${mosque_guid} (${users.length} users)`);
 
       const triggers = users.map(user =>
