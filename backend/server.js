@@ -91,7 +91,7 @@ app.use('/api/mosques', mosquesRouter);
 app.use('/api/cities',       require('./routes/cities'));
 app.use('/alexa/smart-home', require('./routes/alexaSmartHome'));
 app.use('/alexa/custom',     require('./routes/alexaCustom'));
-app.use('/test', require('./routes/test'));
+app.use('/api/test', require('./routes/test'));
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', ts: new Date(), env: process.env.NODE_ENV }));
