@@ -1,4 +1,5 @@
 const axios = require('axios');
+const db    = require('../database/mysql');
 
 const BASE = 'https://time.my-masjid.com/api';
 const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; AzanTime/1.0)', 'Accept': 'application/json' };
