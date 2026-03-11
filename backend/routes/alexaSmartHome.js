@@ -42,6 +42,10 @@ async function handleDiscovery(directive) {
             manufacturerName: 'Azan Time',
             displayCategories: ['DOORBELL'],
             cookie: {},
+            scope: {
+              type: 'BearerToken',
+              token: directive.directive.payload.scope.token
+            },
             capabilities: [
               {
                 type: 'AlexaInterface',
