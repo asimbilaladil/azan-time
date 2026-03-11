@@ -3,16 +3,15 @@ const axios = require('axios');
 
 router.get('/doorbell', async (req, res) => {
   try {
-
+    const params = new URLSearchParams();
+    params.append("grant_type", "client_credentials");
+    params.append("client_id", "amzn1.application-oa2-client.6c00c2d528c74c0281bbbc2f06bb2b78");
+    params.append("client_secret", "amzn1.oa2-cs.v1.8c1f5ea4a26b8e940bebcdc32a98fa6f9bc7742f078a3cdd194b1b87ab483def");
+    params.append("scope", "alexa::events:skill");
     // STEP 1 — GET EVENT TOKEN
     const tokenRes = await axios.post(
       "https://api.amazon.com/auth/O2/token",
-      new URLSearchParams({
-        grant_type: "client_credentials",
-        client_id: "amzn1.application-oa2-client.6c00c2d528c74c0281bbbc2f06bb2b78",
-        client_secret: "amzn1.oa2-cs.v1.8c1f5ea4a26b8e940bebcdc32a98fa6f9bc7742f078a3cdd194b1b87ab483def",
-        scope: "alexa::events:skill"
-      }),
+      params,
       {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded"
