@@ -1,5 +1,4 @@
 const axios = require('axios');
-const db    = require('../database/mysql');
 
 const BASE = 'https://time.my-masjid.com/api';
 const HEADERS = { 'User-Agent': 'Mozilla/5.0 (compatible; AzanTime/1.0)', 'Accept': 'application/json' };
@@ -28,6 +27,7 @@ async function searchMosques(query) {
  * Uses DB cache — only fetches from API if today's record is missing.
  */
 async function getMosqueTimes(guid) {
+  const db    = require('../database/mysql');
   const now   = new Date();
   const day   = now.getDate();        // e.g. 8
   const month = now.getMonth() + 1;  // e.g. 3
