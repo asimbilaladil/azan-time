@@ -22,7 +22,7 @@ router.post('/', async (req, res) => {
 async function handleDiscovery(directive) {
   const [[user]] = await db.query('SELECT id FROM users WHERE is_active = TRUE LIMIT 1');
   const userId = user?.id || 1;
-  const endpointId = `azan-device-${userId}`;
+  const endpointId = `azan-doorbel-${userId}`;
   await db.query('UPDATE users SET device_id = ? WHERE id = ?', [endpointId, userId]);
   console.log(`✅ Device registered: ${endpointId} for user ${userId}`);
   return {
