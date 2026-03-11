@@ -27,22 +27,68 @@ async function handleDiscovery(directive) {
   console.log(`✅ Device registered: ${endpointId} for user ${userId}`);
   return {
     event: {
-      header: { namespace: 'Alexa.Discovery', name: 'Discover.Response', payloadVersion: '3', messageId: crypto.randomUUID() },
+      header: {
+        namespace: 'Alexa.Discovery',
+        name: 'Discover.Response',
+        payloadVersion: '3',
+        messageId: crypto.randomUUID(),
+      },
       payload: {
-        endpoints: [{
-          endpointId,
-          friendlyName: 'Azan',
-          description: 'Plays the Adhan automatically at prayer times',
-          manufacturerName: 'Azan Time',
-          displayCategories: ['DOORBELL'],
-          cookie: {},
-          capabilities: [
-            { type: 'AlexaInterface', interface: 'Alexa.DoorbellEventSource', version: '3', properties: { supported: [], proactivelyReported: true, retrievable: false } },
-            { type: 'AlexaInterface', interface: 'Alexa.PowerController', version: '3', properties: { supported: [{ name: 'powerState' }], proactivelyReported: true, retrievable: true } },
-            { type: 'AlexaInterface', interface: 'Alexa.EndpointHealth', version: '3', properties: { supported: [{ name: 'connectivity' }], proactivelyReported: true, retrievable: true } },
-            { type: 'AlexaInterface', interface: 'Alexa', version: '3' },
-          ],
-        }],
+        endpoints: [
+          {
+            endpointId,
+            friendlyName: 'Azan',
+            description: 'Plays the Adhan automatically at prayer times',
+            manufacturerName: 'Azan Time',
+            displayCategories: ['DOORBELL'],
+            cookie: {},
+            capabilities: [
+              {
+                type: 'AlexaInterface',
+                interface: 'Alexa',
+                version: '3',
+              },
+              {
+                type: 'AlexaInterface',
+                interface: 'Alexa.DoorbellEventSource',
+                version: '3',
+                properties: {
+                  supported: [],
+                  proactivelyReported: true,
+                  retrievable: false,
+                },
+              },
+              {
+                type: 'AlexaInterface',
+                interface: 'Alexa.CameraStreamController',
+                version: '3',
+                cameraStreamConfigurations: [
+                  {
+                    protocols: ['RTSP'],
+                    resolutions: [
+                      { width: 1280, height: 720 },
+                    ],
+                    authorizationTypes: ['NONE'],
+                    videoCodecs: ['H264'],
+                    audioCodecs: ['AAC'],
+                  },
+                ],
+              },
+              {
+                type: 'AlexaInterface',
+                interface: 'Alexa.EndpointHealth',
+                version: '3',
+                properties: {
+                  supported: [
+                    { name: 'connectivity' },
+                  ],
+                  proactivelyReported: true,
+                  retrievable: true,
+                },
+              },
+            ],
+          },
+        ],
       },
     },
   };
