@@ -39,7 +39,7 @@ async function handleDiscovery(directive) {
           endpointId: "azan-doorbell-1",
           manufacturerName: "Azan Time",
           friendlyName: "Azan",
-          description: "Azan Doorbell",
+          description: "Azan prayer announcement doorbell",
           displayCategories: ["DOORBELL"],
           cookie: {},
           capabilities: [
@@ -52,11 +52,7 @@ async function handleDiscovery(directive) {
               type: "AlexaInterface",
               interface: "Alexa.DoorbellEventSource",
               version: "3",
-              properties: {
-                supported: [],
-                proactivelyReported: true,
-                retrievable: false
-              }
+              proactivelyReported: true
             },
             {
               type: "AlexaInterface",
