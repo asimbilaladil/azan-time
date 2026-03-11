@@ -36,7 +36,7 @@ async function handleDiscovery(directive) {
     payload: {
       endpoints: [
         {
-          endpointId: "azan-doorbell-1",
+          endpointId: endpointId,
           manufacturerName: "Azan Time",
           friendlyName: "Azan",
           description: "Azan prayer announcement doorbell",
