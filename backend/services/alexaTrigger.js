@@ -58,27 +58,21 @@ async function triggerAlexaDevice(user, prayer) {
   }
 }
 
-function buildDoorbellEvent(endpointId, accessToken) {
+
+function buildDoorbellEvent(endpointId) {
   return {
-    context: {},
     event: {
       header: {
-        namespace: "Alexa.DoorbellEventSource",
-        name: "DoorbellPress",
-        payloadVersion: "3",
-        messageId: crypto.randomUUID()
+        messageId: crypto.randomUUID(),
+        namespace: 'Alexa.DoorbellEventSource',
+        name: 'DoorbellPress',
+        payloadVersion: '3'
       },
       endpoint: {
-        scope: {
-          type: "BearerToken",
-          token: accessToken
-        },
-        endpointId: endpointId
+        endpointId
       },
       payload: {
-        cause: {
-          type: "PHYSICAL_INTERACTION"
-        },
+        cause: { type: 'PHYSICAL_INTERACTION' },
         timestamp: new Date().toISOString()
       }
     }
