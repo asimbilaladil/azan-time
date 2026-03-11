@@ -27,13 +27,15 @@ async function searchMosques(query) {
  * Uses DB cache — only fetches from API if today's record is missing.
  */
 async function getMosqueTimes(guid) {
-  const db    = require('../database/mysql');
+  const mysql = require('../database/mysql');   // load here
+  const db = mysql;
+
   const now   = new Date();
   const day   = now.getDate();        // e.g. 8
   const month = now.getMonth() + 1;  // e.g. 3
 
   // Check DB cache for today
-  const [rows] = await db.query(
+  const [rows] = await mysql.query(
     'SELECT * FROM mosques WHERE guid = ? AND MONTH(times_date) = ? AND DAY(times_date) = ? AND YEAR(times_date) = YEAR(CURDATE())',
     [guid, month, day]
   );
