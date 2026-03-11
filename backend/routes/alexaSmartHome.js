@@ -35,6 +35,7 @@ async function handleDiscovery(directive) {
           description: 'Plays the Adhan automatically at prayer times',
           manufacturerName: 'Azan Time',
           displayCategories: ['DOORBELL'],
+          cookie: {},
           capabilities: [
             { type: 'AlexaInterface', interface: 'Alexa.DoorbellEventSource', version: '3', properties: { supported: [], proactivelyReported: true, retrievable: false } },
             { type: 'AlexaInterface', interface: 'Alexa.PowerController', version: '3', properties: { supported: [{ name: 'powerState' }], proactivelyReported: true, retrievable: true } },
