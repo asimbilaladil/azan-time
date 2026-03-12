@@ -29,13 +29,22 @@ router.get("/doorbell", async (req, res) => {
       message: "Doorbell event triggered"
     });
 
-  } catch (err) {
-    console.error("❌ Test trigger error:", err.message);
+  }catch (err) {
 
-    res.status(500).json({
-      error: err.message
-    });
+  console.error("❌ Alexa API ERROR");
+
+  if (err.response) {
+    console.error("Status:", err.response.status);
+    console.error("Headers:", err.response.headers);
+    console.error("Data:", JSON.stringify(err.response.data, null, 2));
+  } else {
+    console.error(err.message);
   }
+
+  res.status(500).json({
+    error: err.response?.data || err.message
+  });
+}
 });
 
 module.exports = router;
