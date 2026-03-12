@@ -96,7 +96,8 @@ async function handleAcceptGrant(directive) {
 
   const grantCode = directive.directive.payload.grant.code;
   const granteeToken = directive.directive.payload.grantee.token;
-
+  console.log("-----grantCode------",grantCode);
+  console.log("-----granteeToken------",granteeToken);
   const response = await axios.post(
     "https://api.amazon.com/auth/o2/token",
     new URLSearchParams({
@@ -116,6 +117,7 @@ async function handleAcceptGrant(directive) {
   const eventToken = response.data.access_token;
   const expiresIn = response.data.expires_in;
 
+  console.log("-----eventToken------",eventToken);
   console.log("✅ Event gateway token received");
 
   await db.query(
