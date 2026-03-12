@@ -1,15 +1,23 @@
-const router = require('express').Router();
-const axios = require('axios');
+const router = require("express").Router();
+const axios = require("axios");
 
-router.get('/doorbell', async (req, res) => {
+router.get("/doorbell", async (req, res) => {
   try {
+
+    /*
+    =============================
+    STEP 1 — GET EVENT TOKEN
+    =============================
+    */
+
     const params = new URLSearchParams();
+
     params.append("grant_type", "client_credentials");
-    params.append("client_id", "amzn1.application-oa2-client.6c00c2d528c74c0281bbbc2f06bb2b78");
-    params.append("client_secret", "amzn1.oa2-cs.v1.8c1f5ea4a26b8e940bebcdc32a98fa6f9bc7742f078a3cdd194b1b87ab483def");
-    params.append("scope", "profile:user_id");
-    // STEP 1 — GET EVENT TOKEN
-    const tokenRes = await axios.post(
+    params.append("client_id", process.env.LWA_CLIENT_ID);
+    params.append("client_secret", process.env.LWA_CLIENT_SECRET);
+    params.append("scope", "alexa::events:skill");
+
+    const tokenResponse = await axios.post(
       "https://api.amazon.com/auth/O2/token",
       params,
       {
@@ -19,12 +27,18 @@ router.get('/doorbell', async (req, res) => {
       }
     );
 
-    const token = tokenRes.data.access_token;
+    const token = tokenResponse.data.access_token;
 
-    console.log("EVENT TOKEN:", token);
+    console.log("Alexa Event Token:", token);
 
-    // STEP 2 — SEND DOORBELL EVENT
+    /*
+    =============================
+    STEP 2 — CREATE DOORBELL EVENT
+    =============================
+    */
+
     const event = {
+      context: {},
       event: {
         header: {
           namespace: "Alexa.DoorbellEventSource",
@@ -33,16 +47,28 @@ router.get('/doorbell', async (req, res) => {
           messageId: Date.now().toString()
         },
         endpoint: {
-          endpointId: "azan-doorbell-1"
+          scope: {
+            type: "BearerToken",
+            token: token
+          },
+          endpointId: process.env.ALEXA_ENDPOINT_ID
         },
         payload: {
-          cause: { type: "PHYSICAL_INTERACTION" },
+          cause: {
+            type: "PHYSICAL_INTERACTION"
+          },
           timestamp: new Date().toISOString()
         }
       }
     };
 
-    const alexaRes = await axios.post(
+    /*
+    =============================
+    STEP 3 — SEND EVENT TO ALEXA
+    =============================
+    */
+
+    const alexaResponse = await axios.post(
       "https://api.amazonalexa.com/v3/events",
       event,
       {
@@ -53,14 +79,26 @@ router.get('/doorbell', async (req, res) => {
       }
     );
 
-    res.json({
+    console.log("Alexa Response:", alexaResponse.data);
+
+    return res.json({
       success: true,
-      alexa: alexaRes.data
+      message: "Doorbell event sent successfully",
+      alexaResponse: alexaResponse.data
     });
 
-  } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).json(err.response?.data || err.message);
+  } catch (error) {
+
+    console.error(
+      "Alexa Event Error:",
+      error.response?.data || error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: error.response?.data || error.message
+    });
+
   }
 });
 
