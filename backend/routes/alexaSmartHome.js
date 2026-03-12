@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const crypto = require('crypto');
 const db     = require('../database/mysql');
+const axios = require("axios");
 
 router.post('/', async (req, res) => {
   const directive = req.body;
@@ -90,7 +91,6 @@ function handleReportState(directive) {
     context: { properties: [{ namespace: 'Alexa.PowerController', name: 'powerState', value: 'OFF', timeOfSample: new Date().toISOString(), uncertaintyInMilliseconds: 200 }] },
   };
 }
-const axios = require("axios");
 
 async function handleAcceptGrant(directive) {
 
@@ -120,9 +120,10 @@ async function handleAcceptGrant(directive) {
 
     console.log("✅ Alexa Event Gateway token received");
 
-    // store event token in DB
     await db.query(
-      "UPDATE users SET event_token = ?, event_token_expires = DATE_ADD(NOW(), INTERVAL ? SECOND) WHERE is_active = TRUE",
+      `UPDATE users 
+       SET event_token = ?, event_token_expires = DATE_ADD(NOW(), INTERVAL ? SECOND)
+       WHERE is_active = TRUE`,
       [eventToken, expiresIn]
     );
 
