@@ -10,7 +10,7 @@ Triggers Alexa DoorbellPress manually
 GET /api/test/doorbell
 */
 
-router.get("/doorbell", requireAuth, async (req, res) => {
+router.get("/doorbell", async (req, res) => {
   try {
     const userId = req.user.userId;
 
