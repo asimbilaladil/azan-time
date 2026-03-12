@@ -17,7 +17,7 @@ async function triggerAlexaDevice(user, prayer) {
     }
   }
 
-  const payload = buildDoorbellEvent(user.device_id);
+  const payload = buildDoorbellEvent(user.device_id, accessToken);
 
   // Helpful debug
   console.log("📡 Sending DoorbellPress:", JSON.stringify(payload));
@@ -41,7 +41,7 @@ async function triggerAlexaDevice(user, prayer) {
     if (status === 401) {
       const newToken = await refreshAccessToken(user.id);
 
-      await axios.post(ALEXA_API_URL, buildDoorbellEvent(user.device_id), {
+      await axios.post(ALEXA_API_URL, buildDoorbellEvent(user.device_id, newToken), {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${newToken}`
