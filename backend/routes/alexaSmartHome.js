@@ -135,17 +135,7 @@ async function handleAcceptGrant(directive) {
     [eventToken, expiresIn]
   );
 
-  return {
-    event: {
-      header: {
-        namespace: "Alexa.Authorization",
-        name: "AcceptGrant.Response",
-        payloadVersion: "3",
-        messageId: crypto.randomUUID()
-      },
-      payload: {}
-    }
-  };
+  return { event: { header: { namespace: 'Alexa.Authorization', name: 'AcceptGrant.Response', payloadVersion: '3', messageId: crypto.randomUUID() }, payload: {} } };
 }
 
 module.exports = router;
