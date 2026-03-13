@@ -71,23 +71,21 @@ router.post('/', async (req, res) => {
     return res.json({
       version: '1.0',
       response: {
-        directives: [{
-          type:          'AudioPlayer.Play',
-          playBehavior:  'REPLACE_ALL',
-          audioItem: {
-            stream: {
-              token,
-              url: audioUrl,
-              offsetInMilliseconds: 0,
-            },
-            metadata: {
-              title:    `${prayerName} Adhan`,
-              subtitle: 'Azan Time',
-            },
-          },
-        }],
-        shouldEndSession: true,
-      },
+        directives: [
+          {
+            type: 'AudioPlayer.Play',
+            playBehavior: 'REPLACE_ALL',
+            audioItem: {
+              stream: {
+                token,
+                url: audioUrl,
+                offsetInMilliseconds: 0
+              }
+            }
+          }
+        ],
+        shouldEndSession: true
+      }
     });
 
   } catch (err) {
