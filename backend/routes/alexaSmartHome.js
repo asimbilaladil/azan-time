@@ -99,41 +99,39 @@ function handleReportState(directive) {
 // }
 
 async function handleAcceptGrant(directive) {
+    
+  const grantCode = directive.directive.payload.grant.code;
+  const granteeToken = directive.directive.payload.grantee.token;
 
-  console.log("inside handleAcceptGrant");
+  console.log("grantCode:", grantCode);
+  console.log("granteeToken:", granteeToken);
 
-  // const grantCode = directive.directive.payload.grant.code;
-  // const granteeToken = directive.directive.payload.grantee.token;
+  const response = await axios.post(
+    "https://api.amazon.com/auth/o2/token",
+    new URLSearchParams({
+      grant_type: "authorization_code",
+      code: grantCode,
+      client_id: process.env.ALEXA_EVENT_CLIENT_ID,
+      client_secret: process.env.ALEXA_EVENT_CLIENT_SECRET
+    }),
+    {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      }
+    }
+  );
 
-  // console.log("grantCode:", grantCode);
-  // console.log("granteeToken:", granteeToken);
+  const eventToken = response.data.access_token;
+  const expiresIn = response.data.expires_in;
 
-  // const response = await axios.post(
-  //   "https://api.amazon.com/auth/o2/token",
-  //   new URLSearchParams({
-  //     grant_type: "authorization_code",
-  //     code: grantCode,
-  //     client_id: process.env.ALEXA_EVENT_CLIENT_ID,
-  //     client_secret: process.env.ALEXA_EVENT_CLIENT_SECRET
-  //   }),
-  //   {
-  //     headers: {
-  //       "Content-Type": "application/x-www-form-urlencoded"
-  //     }
-  //   }
-  // );
+  console.log("EVENT TOKEN:", eventToken);
 
-  // const eventToken = response.data.access_token;
-  // const expiresIn = response.data.expires_in;
-
-  // console.log("EVENT TOKEN:", eventToken);
-
-  // await db.query(
-  //   `UPDATE users 
-  //    SET event_token=?, event_token_expires=DATE_ADD(NOW(), INTERVAL ? SECOND)
-  //    WHERE id=1`,
-  //   [eventToken, expiresIn]
-  // );
+  await db.query(
+    `UPDATE users 
+     SET event_token=?, event_token_expires=DATE_ADD(NOW(), INTERVAL ? SECOND)
+     WHERE id=1`,
+    [eventToken, expiresIn]
+  );
 
   return { event: { header: { namespace: 'Alexa.Authorization', name: 'AcceptGrant.Response', payloadVersion: '3', messageId: crypto.randomUUID() }, payload: {} } };
 }
