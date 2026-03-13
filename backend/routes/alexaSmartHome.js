@@ -4,8 +4,6 @@ const db     = require('../database/mysql');
 const axios = require("axios");
 
 router.post('/', async (req, res) => {
-    console.log("🔥 Alexa directive received");
-  console.log(JSON.stringify(req.body, null, 2));
   const directive = req.body;
   const namespace = directive?.directive?.header?.namespace;
   const name      = directive?.directive?.header?.name;
