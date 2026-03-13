@@ -91,53 +91,8 @@ function handleReportState(directive) {
     context: { properties: [{ namespace: 'Alexa.PowerController', name: 'powerState', value: 'OFF', timeOfSample: new Date().toISOString(), uncertaintyInMilliseconds: 200 }] },
   };
 }
-
-async function handleAcceptGrant(directive) {
-
-  const grantCode = directive.directive.payload.grant.code;
-  const granteeToken = directive.directive.payload.grantee.token;
-  console.log("-----grantCode------",grantCode);
-  console.log("-----granteeToken------",granteeToken);
-  const response = await axios.post(
-    "https://api.amazon.com/auth/o2/token",
-    new URLSearchParams({
-      grant_type: "authorization_code",
-      code: grantCode,
-      client_id: process.env.LWA_CLIENT_ID,
-      client_secret: process.env.LWA_CLIENT_SECRET
-    }),
-    {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": `Bearer ${granteeToken}`
-      }
-    }
-  );
-
-  const eventToken = response.data.access_token;
-  const expiresIn = response.data.expires_in;
-
-  console.log("-----eventToken------",eventToken);
-  console.log("✅ Event gateway token received");
-
-  await db.query(
-    "UPDATE users SET event_token=?, event_token_expires=DATE_ADD(NOW(), INTERVAL ? SECOND) WHERE is_active=TRUE",
-    [eventToken, expiresIn]
-  );
-
-  return {
-    event: {
-      header: {
-        namespace: "Alexa.Authorization",
-        name: "AcceptGrant.Response",
-        payloadVersion: "3",
-        messageId: crypto.randomUUID()
-      },
-      payload: {}
-    }
-  };
-}
-function handleAcceptGrantOld(directive) {
+function handleAcceptGrant(directive) {
+  console.log("inside handleAcceptGrant");
   return { event: { header: { namespace: 'Alexa.Authorization', name: 'AcceptGrant.Response', payloadVersion: '3', messageId: crypto.randomUUID() }, payload: {} } };
 }
 
