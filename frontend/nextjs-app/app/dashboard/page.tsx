@@ -120,7 +120,10 @@ export default function DashboardPage() {
     try {
       await axios.put(
         `${API}/user/settings`,
-        { mosque_guid: m.guid },
+        { mosque_guid: m.guid
+          mosque_lat: m.latitude,   // ADD
+          mosque_lng: m.longitude   // ADD
+        },
         { headers: { Authorization: `Bearer ${jwt}` } }
       )
 

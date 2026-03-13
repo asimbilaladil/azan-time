@@ -18,7 +18,9 @@ async function searchMosques(query) {
     guid: m.guidId || m.GuidId,
     name: m.name || m.MasjidName,
     city: m.cityId || m.City || '',
-    country: m.countryId || m.Country || ''
+    country: m.countryId || m.Country || '',
+    latitude: m.latitude || m.Latitude || null,   // ADD
+    longitude: m.longitude || m.Longitude || null  // ADD
   })).filter(m => m.guid && m.name);
 }
 
