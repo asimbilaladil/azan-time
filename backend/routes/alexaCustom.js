@@ -117,11 +117,16 @@ async function getUserByToken(accessToken) {
 
 function buildSpeakResponse(text) {
   return {
-    version: '1.0',
+    version: "1.0",
     response: {
-      outputSpeech: { type: 'PlainText', text },
-      shouldEndSession: true,
-    },
+      outputSpeech: {
+        type: "SSML",
+        ssml: `<speak>
+          <audio src="https://cdn.azantime.de/fajr.mp3"/>
+        </speak>`
+      },
+      shouldEndSession: true
+    }
   };
 }
 
