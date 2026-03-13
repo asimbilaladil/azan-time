@@ -14,7 +14,8 @@ const AUDIO_URLS = {
 };
 
 router.post('/', async (req, res) => {
-
+  console.log("🔥 ALEXA CUSTOM REQUEST");
+  console.log(JSON.stringify(req.body, null, 2));
   const body = req.body;
   const requestType = body?.request?.type;
 
