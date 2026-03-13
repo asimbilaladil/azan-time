@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
     if (namespace === 'Alexa.Discovery' && name === 'Discover') return res.json(await handleDiscovery(directive));
     if (namespace === 'Alexa.PowerController') return res.json(await handlePowerController(directive));
     if (namespace === 'Alexa' && name === 'ReportState') return res.json(handleReportState(directive));
-    if (namespace === 'Alexa.Authorization' && name === 'AcceptGrant') return res.json(handleAcceptGrant(directive));
+    if (namespace === 'Alexa.Authorization' && name === 'AcceptGrant') return res.json(await handleAcceptGrant(directive));
     res.json({});
   } catch (err) {
     console.error('Smart Home error:', err.message);
