@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const { decrypt } = require('./encryption');
 const { refreshAccessToken } = require('./authService');
 
-const ALEXA_API_URL = 'https://api.amazonalexa.com/v3/events';
+const ALEXA_API_URL = 'https://api.eu.amazonalexa.com/v3/events';
 
 async function triggerAlexaDevice(user, prayer) {
 
