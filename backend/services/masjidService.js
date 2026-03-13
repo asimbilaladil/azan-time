@@ -1,173 +1,114 @@
 const axios = require('axios');
-const db = require('../database/mysql');
+const db    = require('../database/mysql');
 
 const BASE = 'https://time.my-masjid.com/api';
-const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (compatible; AzanTime/1.0)',
-  'Accept': 'application/json'
-};
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+const cache = new Map();
 
 async function searchMosques(query) {
-  const url = `${BASE}/Masjid/GetPublicFilteredMasjid?searchParam=${encodeURIComponent(query)}&isPublished=1`;
-
-  const r = await axios.get(url, { headers: HEADERS, timeout: 8000 });
-
-  const list = r.data?.model?.masjidList || r.data?.data || [];
-
+  const url = `${BASE}/Masjid/GetAllMasjid?searchKey=${encodeURIComponent(query)}`;
+  const { data } = await axios.get(url, { timeout: 8000 });
+  const list = data?.model || [];
   return list.map(m => ({
-    guid: m.guidId || m.GuidId,
-    name: m.name || m.MasjidName,
-    city: m.cityId || m.City || '',
-    country: m.countryId || m.Country || ''
-  })).filter(m => m.guid && m.name);
+    guid:    m.guidId,
+    name:    m.name,
+    address: [m.house, m.street, m.city, m.country].filter(Boolean).join(', '),
+    city:    m.city,
+    country: m.country,
+    latitude:  m.latitude,
+    longitude: m.longitude,
+  }));
 }
 
 async function getMosqueTimes(guid) {
-
-  const now = new Date();
-  const day = now.getDate();
-  const month = now.getMonth() + 1;
-
-  const [rows] = await db.query(
-    `SELECT * FROM mosques
-     WHERE guid = ?
-     AND MONTH(times_date) = ?
-     AND DAY(times_date) = ?
-     AND YEAR(times_date) = YEAR(CURDATE())`,
-    [guid, month, day]
-  );
-
-  if (rows.length > 0) {
-
-    const m = rows[0];
-
-    return {
-      mosque: {
-        guid: m.guid,
-        name: m.name,
-        city: m.city,
-        country: m.country
-      },
-      times: {
-        fajr: m.fajr,
-        dhuhr: m.dhuhr,
-        asr: m.asr,
-        maghrib: m.maghrib,
-        isha: m.isha
-      }
-    };
+  const now = Date.now();
+  if (cache.has(guid)) {
+    const { ts, data } = cache.get(guid);
+    if (now - ts < CACHE_TTL) return data;
   }
 
   const url = `${BASE}/TimingsInfoScreen/GetMasjidMultipleTimings?GuidId=${guid}`;
+  const { data } = await axios.get(url, { timeout: 8000 });
 
-  const r = await axios.get(url, { headers: HEADERS, timeout: 10000 });
+  const today = new Date();
+  const day   = today.getDate();
+  const month = today.getMonth() + 1;
 
-  const model = r.data?.model;
+  const timings = data?.model?.salahTimings || [];
+  const entry   = timings.find(t => t.day === day && t.month === month);
 
-  if (!model) throw new Error('Invalid API response');
+  if (!entry) throw new Error(`No timings found for ${day}/${month}`);
 
-  const details = model.masjidDetails || {};
-
-  const name = details.name || 'Mosque';
-  const city = details.city || '';
-  const country = details.country || '';
-
-  const salahTimings = model.salahTimings || [];
-
-  const todayEntry = salahTimings.find(e =>
-    e.day === day && e.month === month
-  );
-
-  if (!todayEntry) throw new Error('No timing found');
-
-  const times = {
-    fajr: todayEntry.fajr?.[0]?.salahTime || null,
-    dhuhr: todayEntry.zuhr?.[0]?.salahTime || null,
-    asr: todayEntry.asr?.[0]?.salahTime || null,
-    maghrib: todayEntry.maghrib?.[0]?.salahTime || null,
-    isha: todayEntry.isha?.[0]?.salahTime || null
+  const result = {
+    fajr:    entry.fajr?.[0]?.salahTime    || null,
+    dhuhr:   entry.zuhr?.[0]?.salahTime    || null,
+    asr:     entry.asr?.[0]?.salahTime     || null,
+    maghrib: entry.maghrib?.[0]?.salahTime || null,
+    isha:    entry.isha?.[0]?.salahTime    || null,
   };
 
-  const todayDate =
-    `${now.getFullYear()}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-
-  await db.query(`
-    INSERT INTO mosques
-    (guid,name,city,country,fajr,dhuhr,asr,maghrib,isha,times_date)
-    VALUES (?,?,?,?,?,?,?,?,?,?)
-    ON DUPLICATE KEY UPDATE
-    name=VALUES(name),
-    city=VALUES(city),
-    country=VALUES(country),
-    fajr=VALUES(fajr),
-    dhuhr=VALUES(dhuhr),
-    asr=VALUES(asr),
-    maghrib=VALUES(maghrib),
-    isha=VALUES(isha),
-    times_date=VALUES(times_date),
-    updated_at=NOW()
-  `, [
-    guid,
-    name,
-    city,
-    country,
-    times.fajr,
-    times.dhuhr,
-    times.asr,
-    times.maghrib,
-    times.isha,
-    todayDate
-  ]);
-
-  console.log(
-    `Fetched ${name} (${city})`,
-    times
-  );
-
-  return {
-    mosque: { guid, name, city, country },
-    times
-  };
+  cache.set(guid, { ts: now, data: result });
+  return result;
 }
 
 async function checkPrayerTimeNow(guid) {
-
   try {
-
-    const { times } = await getMosqueTimes(guid);
-
+    const { times, timezone } = await getMosqueTimesWithTz(guid);
     const now = new Date();
 
-    const nowMin = now.getHours() * 60 + now.getMinutes();
+    // Convert server UTC time to mosque local time
+    const tz = timezone || 'UTC';
+    const nowLocal = new Date(now.toLocaleString('en-US', { timeZone: tz }));
+    const nowMin   = nowLocal.getHours() * 60 + nowLocal.getMinutes();
 
-    for (const prayer of ['fajr','dhuhr','asr','maghrib','isha']) {
+    console.log(`🕐 Local time in ${tz}: ${nowLocal.getHours()}:${String(nowLocal.getMinutes()).padStart(2,'0')} (${nowMin} min)`);
 
+    for (const prayer of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
       if (!times[prayer]) continue;
-
-      const [h,m] = times[prayer].split(':').map(Number);
-
+      const [h, m] = times[prayer].split(':').map(Number);
       const prayerMin = h * 60 + m;
-
       if (nowMin >= prayerMin && nowMin < prayerMin + 1) {
-
         console.log(`Prayer matched: ${prayer}`);
-
         return prayer;
       }
     }
-
     return null;
-
   } catch (err) {
-
     console.error('Prayer check error:', err.message);
-
     return null;
   }
 }
 
-module.exports = {
-  searchMosques,
-  getMosqueTimes,
-  checkPrayerTimeNow
-};
+// Get times + resolve timezone from mosque lat/lng
+async function getMosqueTimesWithTz(guid) {
+  // Try to get timezone from users table first
+  const [[user]] = await db.query(
+      'SELECT timezone, mosque_guid FROM users WHERE mosque_guid = ? LIMIT 1', [guid]
+  );
+
+  let timezone = user?.timezone || null;
+
+  // If no timezone stored, fetch mosque details to get lat/lng
+  if (!timezone) {
+    try {
+      const tzlookup = require('tz-lookup');
+      const url = `${BASE}/TimingsInfoScreen/GetMasjidMultipleTimings?GuidId=${guid}`;
+      const { data } = await axios.get(url, { timeout: 8000 });
+      const lat = data?.model?.masjidDetails?.latitude;
+      const lng = data?.model?.masjidDetails?.longitude;
+      if (lat && lng) {
+        timezone = tzlookup(lat, lng);
+        console.log(`📍 Resolved timezone ${timezone} from lat=${lat} lng=${lng}`);
+        // Save it for next time
+        await db.query('UPDATE users SET timezone = ? WHERE mosque_guid = ?', [timezone, guid]);
+      }
+    } catch (e) {
+      console.error('Timezone lookup failed:', e.message);
+    }
+  }
+
+  const times = await getMosqueTimes(guid);
+  return { times, timezone };
+}
+
+module.exports = { searchMosques, getMosqueTimes, checkPrayerTimeNow };
