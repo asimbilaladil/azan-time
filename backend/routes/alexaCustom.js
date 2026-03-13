@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
   const requestType = body?.request?.type;
 
   try {
-
+    console.log('requestType',requestType)
     // 1️⃣ LaunchRequest (routine opens skill)
     if (requestType === "LaunchRequest") {
       return res.json({
