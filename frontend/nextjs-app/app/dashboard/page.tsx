@@ -159,14 +159,14 @@ export default function DashboardPage() {
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body { background: #071a11; }
+        body { background: #0f2d1c; }
 
         .dash-root {
           min-height: 100vh;
           background: 
-            radial-gradient(ellipse at 20% 0%, rgba(139,101,30,0.12) 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 100%, rgba(10,60,35,0.4) 0%, transparent 50%),
-            linear-gradient(160deg, #0d2a1a 0%, #071510 40%, #0a1f14 100%);
+            radial-gradient(ellipse at 20% 0%, rgba(139,101,30,0.18) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 100%, rgba(10,80,45,0.35) 0%, transparent 50%),
+            linear-gradient(160deg, #1a3d28 0%, #0f2318 40%, #132d1e 100%);
           color: #e8dfc0;
           font-family: 'Cormorant Garamond', serif;
           padding: 0;
@@ -655,9 +655,13 @@ export default function DashboardPage() {
           letter-spacing: 0.08em;
         }
 
-        .connect-btn {
+        .skill-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
           width: 100%;
-          padding: 11px;
+          padding: 13px;
           background: linear-gradient(135deg, #c9a84c, #8b6a1e);
           border: none;
           border-radius: 10px;
@@ -669,40 +673,47 @@ export default function DashboardPage() {
           cursor: pointer;
           transition: all 0.2s;
           box-shadow: 0 4px 20px rgba(201,168,76,0.25);
+          text-decoration: none;
         }
 
-        .connect-btn:hover {
+        .skill-btn:hover {
           transform: translateY(-1px);
           box-shadow: 0 6px 28px rgba(201,168,76,0.4);
         }
 
-        .device-card { }
+        .skill-btn-icon {
+          font-size: 1.1rem;
+        }
 
-        .device-status {
+        .skill-steps {
+          margin-top: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .skill-step {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          font-size: 0.78rem;
+          color: rgba(232,223,192,0.5);
+          line-height: 1.4;
+        }
+
+        .skill-step-num {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          border: 1px solid rgba(201,168,76,0.3);
+          color: rgba(201,168,76,0.6);
+          font-family: 'Cinzel', serif;
+          font-size: 0.6rem;
           display: flex;
           align-items: center;
-          gap: 10px;
-          font-size: 0.85rem;
-        }
-
-        .status-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #4ade80;
-          box-shadow: 0 0 8px rgba(74,222,128,0.6);
+          justify-content: center;
           flex-shrink: 0;
-        }
-
-        .status-dot.inactive { background: rgba(232,223,192,0.3); box-shadow: none; }
-
-        .device-id {
-          font-family: 'Cinzel', serif;
-          font-size: 0.7rem;
-          letter-spacing: 0.08em;
-          color: rgba(232,223,192,0.5);
-          margin-top: 6px;
-          padding-left: 18px;
+          margin-top: 1px;
         }
 
         /* ── FOOTER ── */
@@ -884,33 +895,40 @@ export default function DashboardPage() {
             {/* RIGHT */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-              {/* Alexa Card */}
+              {/* Alexa Skill Card */}
               <div className="card alexa-card">
                 <div className="alexa-title">Hear Adhan on Alexa</div>
                 <p className="alexa-desc">
-                  Hear the Adhan automatically on your Alexa device at every prayer — automatically, beautifully, hands-free.
+                  Enable the Azan Time skill on your Alexa device and hear the Adhan automatically at every prayer — hands-free.
                 </p>
                 <div className="alexa-brand">
                   <span className="alexa-badge">⌘ amazon</span>
-                  <span className="alexa-badge" style={{ color: 'rgba(232,223,192,0.5)', borderColor: 'rgba(232,223,192,0.1)', background: 'transparent' }}>alexa</span>
+                  <span className="alexa-badge" style={{ color: 'rgba(232,223,192,0.5)', borderColor: 'rgba(232,223,192,0.1)', background: 'transparent' }}>alexa skill</span>
                 </div>
-                <button className="connect-btn">CONNECT ALEXA</button>
-              </div>
-
-              {/* Device Status Card */}
-              {user && (
-                <div className="card device-card">
-                  <div className="device-status">
-                    <div className={`status-dot${user.device_id ? '' : ' inactive'}`} />
-                    <div style={{ fontSize: '0.85rem', color: user.device_id ? '#e8dfc0' : 'rgba(232,223,192,0.4)' }}>
-                      {user.device_id ? 'Device Linked' : 'No Alexa device linked'}
-                    </div>
+                <a
+                  href="https://www.amazon.de/dp/B0GS1SD9LF/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="skill-btn"
+                >
+                  <span className="skill-btn-icon">🔔</span>
+                  ENABLE ALEXA SKILL
+                </a>
+                <div className="skill-steps">
+                  <div className="skill-step">
+                    <div className="skill-step-num">1</div>
+                    <span>Click the button above to open the skill in the Amazon Alexa store</span>
                   </div>
-                  {user.device_id && (
-                    <div className="device-id">{user.device_id}</div>
-                  )}
+                  <div className="skill-step">
+                    <div className="skill-step-num">2</div>
+                    <span>Enable the skill and link your account</span>
+                  </div>
+                  <div className="skill-step">
+                    <div className="skill-step-num">3</div>
+                    <span>Set up an Alexa Routine to play Adhan on doorbell press</span>
+                  </div>
                 </div>
-              )}
+              </div>
 
             </div>
           </div>
