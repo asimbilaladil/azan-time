@@ -2,7 +2,7 @@ module.exports = {
   apps: [{
     name:           'azantime-backend',
     script:         'server.js',
-    instances:      2,
+    instances:      1,        // ← changed from 2
     exec_mode:      'cluster',
     watch:          false,
     max_memory_restart: '500M',
