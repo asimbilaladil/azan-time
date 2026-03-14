@@ -3,6 +3,7 @@ const db          = require('../database/mysql');
 const requireAuth = require('../middleware/auth');
 const { body, validationResult } = require('express-validator');
 const tzLookup = require('tz-lookup'); // ADD at top
+const axios    = require('axios');
 
 // GET /api/user/me
 router.get('/me', requireAuth, async (req, res) => {
