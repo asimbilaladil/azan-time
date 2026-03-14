@@ -1,164 +1,580 @@
-import Link from 'next/link'
+'use client'
+import { Suspense, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 
-export default function Home() {
+const API = process.env.NEXT_PUBLIC_API_URL || '/api'
+
+const BENEFITS = [
+  { icon: '🔔', title: 'Never Miss a Prayer', desc: 'The Adhan plays automatically on your Alexa at the exact time of every prayer.' },
+  { icon: '🕌', title: 'Your Mosque\'s Times', desc: 'Select any mosque worldwide and get prayer times specific to your local masjid.' },
+  { icon: '🗣️', title: 'Beautiful Adhan Audio', desc: 'A full high-quality Adhan recitation plays through your Alexa speaker.' },
+  { icon: '⚙️', title: 'Fully Automatic', desc: 'Set it once and forget it. Runs 24/7 with automatic timezone handling.' },
+]
+
+const STEPS = [
+  { n: '01', title: 'Connect Amazon', desc: 'Sign in with your Amazon account to link your Alexa devices.' },
+  { n: '02', title: 'Choose Mosque', desc: 'Search and select your local mosque for accurate prayer times.' },
+  { n: '03', title: 'Enable Skill', desc: 'Enable the Azan Time skill in the Alexa app and set up a routine.' },
+  { n: '04', title: 'Hear the Adhan', desc: 'The Adhan plays automatically on your Echo at every prayer.' },
+]
+
+function LandingContent() {
+  const params = useSearchParams()
+  const router = useRouter()
+  const tokenParam = params.get('token')
+
+  useEffect(() => {
+    if (tokenParam) localStorage.setItem('jwt', tokenParam)
+    const jwt = localStorage.getItem('jwt')
+    if (jwt) router.replace('/dashboard')
+  }, [tokenParam])
+
   return (
-    <main className="min-h-screen" style={{ background: 'var(--cream)' }}>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cinzel:wght@400;500;600&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap');
 
-      {/* Hero — full emerald panel */}
-      <section className="pattern-bg relative overflow-hidden" style={{ minHeight: '100vh' }}>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        {/* Decorative gold arc top-right */}
-        <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-10"
-          style={{ border: '60px solid var(--gold)' }} />
-        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10"
-          style={{ border: '40px solid var(--gold)' }} />
+        .land-root {
+          min-height: 100vh;
+          background:
+            radial-gradient(ellipse at 15% 10%, rgba(139,101,30,0.18) 0%, transparent 45%),
+            radial-gradient(ellipse at 85% 90%, rgba(10,80,45,0.3) 0%, transparent 50%),
+            linear-gradient(160deg, #1a3d28 0%, #0f2318 50%, #132d1e 100%);
+          color: #e8dfc0;
+          font-family: 'Cormorant Garamond', serif;
+          overflow-x: hidden;
+          position: relative;
+        }
 
-        {/* Decorative arc bottom-left */}
-        <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full opacity-10"
-          style={{ border: '50px solid var(--gold)' }} />
+        .land-root::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background-image:
+            repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(201,168,76,0.04) 59px, rgba(201,168,76,0.04) 60px),
+            repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(201,168,76,0.04) 59px, rgba(201,168,76,0.04) 60px);
+          pointer-events: none;
+          z-index: 0;
+        }
 
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-20 text-center">
+        .deco-circle-1 {
+          position: absolute;
+          top: -140px; right: -140px;
+          width: 500px; height: 500px;
+          border-radius: 50%;
+          border: 70px solid rgba(201,168,76,0.06);
+          pointer-events: none;
+        }
+        .deco-circle-2 {
+          position: absolute;
+          bottom: 200px; left: -100px;
+          width: 340px; height: 340px;
+          border-radius: 50%;
+          border: 50px solid rgba(201,168,76,0.05);
+          pointer-events: none;
+        }
 
-          {/* Crescent + minaret icon row */}
-          <div className="animate-fade-up animate-delay-1 mb-6 flex items-center gap-3">
-            <div className="h-px w-12 opacity-40" style={{ background: 'var(--gold)' }} />
-            <span style={{ color: 'var(--gold)', fontSize: '13px', letterSpacing: '4px', fontFamily: 'DM Sans' }} className="uppercase font-light">
-              Automatic Adhan
-            </span>
-            <div className="h-px w-12 opacity-40" style={{ background: 'var(--gold)' }} />
-          </div>
+        .land-inner {
+          position: relative;
+          z-index: 1;
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 0 24px 80px;
+        }
 
-          <h1 className="font-display animate-fade-up animate-delay-2"
-            style={{ fontSize: 'clamp(56px, 10vw, 100px)', fontWeight: 300, color: 'white', lineHeight: 1.05, letterSpacing: '-1px' }}>
-            Azan<br />
-            <em style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>Time</em>
-          </h1>
+        /* NAV */
+        .land-nav {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 28px 0 20px;
+          border-bottom: 1px solid rgba(201,168,76,0.1);
+        }
 
-          <p className="animate-fade-up animate-delay-3 mt-6 max-w-md"
-            style={{ color: 'rgba(255,255,255,0.65)', fontSize: '17px', lineHeight: 1.7, fontWeight: 300 }}>
-            Hear the Adhan on your Alexa device at every prayer — automatically, beautifully, hands-free.
-          </p>
+        .nav-logo { display: flex; align-items: center; gap: 12px; }
 
-          <div className="animate-fade-up animate-delay-4 mt-12 flex flex-col sm:flex-row gap-4">
-            <Link href="/connect"
-              className="group relative px-10 py-4 rounded-full font-medium transition-all duration-300"
-              style={{ background: 'var(--gold)', color: 'var(--ink)', fontSize: '15px', letterSpacing: '0.5px' }}>
-              <span className="relative z-10">Connect with Amazon →</span>
-              <div className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ background: 'var(--gold-light)' }} />
-            </Link>
-            <Link href="/dashboard"
-              className="px-10 py-4 rounded-full font-light transition-all duration-300"
-              style={{ border: '1px solid rgba(255,255,255,0.25)', color: 'rgba(255,255,255,0.8)', fontSize: '15px' }}>
-              My Dashboard
-            </Link>
-          </div>
+        .nav-logo-icon {
+          width: 40px; height: 40px;
+          background: linear-gradient(135deg, #c9a84c, #8b6a1e);
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 20px;
+          box-shadow: 0 0 20px rgba(201,168,76,0.3);
+        }
 
-          {/* Prayer times preview */}
-          <div className="animate-fade-up animate-delay-5 mt-20 grid grid-cols-5 gap-2 sm:gap-4 max-w-lg w-full">
-            {[
-              { name: 'Fajr',    ar: 'الفجر',   time: '05:14' },
-              { name: 'Dhuhr',   ar: 'الظهر',   time: '12:38' },
-              { name: 'Asr',     ar: 'العصر',   time: '15:52' },
-              { name: 'Maghrib', ar: 'المغرب',  time: '18:29' },
-              { name: 'Isha',    ar: 'العشاء',  time: '20:05' },
-            ].map((p) => (
-              <div key={p.name} className="rounded-2xl p-3 text-center transition-all duration-300 hover:scale-105"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                <div className="font-display text-base mb-0.5" style={{ color: 'var(--gold-light)', fontStyle: 'italic' }}>{p.ar}</div>
-                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', letterSpacing: '1px' }} className="uppercase mb-1">{p.name}</div>
-                <div className="font-display font-light" style={{ color: 'white', fontSize: '18px' }}>{p.time}</div>
+        .nav-logo-name {
+          font-family: 'Cinzel', serif;
+          font-size: 1.1rem;
+          font-weight: 500;
+          letter-spacing: 0.14em;
+          color: #c9a84c;
+        }
+
+        .nav-logo-sub {
+          font-size: 0.62rem;
+          letter-spacing: 0.2em;
+          color: rgba(201,168,76,0.38);
+          margin-top: 1px;
+        }
+
+        .nav-signin {
+          font-family: 'Cinzel', serif;
+          font-size: 0.68rem;
+          letter-spacing: 0.14em;
+          color: rgba(201,168,76,0.55);
+          text-decoration: none;
+          border: 1px solid rgba(201,168,76,0.22);
+          padding: 9px 20px;
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
+        .nav-signin:hover {
+          color: #c9a84c;
+          border-color: rgba(201,168,76,0.5);
+          background: rgba(201,168,76,0.06);
+        }
+
+        /* HERO */
+        .hero {
+          text-align: center;
+          padding: 90px 0 72px;
+          max-width: 680px;
+          margin: 0 auto;
+        }
+
+        .hero-eyebrow {
+          display: inline-flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 28px;
+        }
+
+        .eyebrow-line {
+          height: 1px; width: 36px;
+          background: rgba(201,168,76,0.35);
+        }
+
+        .eyebrow-text {
+          font-family: 'Cinzel', serif;
+          font-size: 0.6rem;
+          letter-spacing: 0.35em;
+          color: rgba(201,168,76,0.5);
+          text-transform: uppercase;
+        }
+
+        .hero-ar {
+          font-family: 'Noto Naskh Arabic', serif;
+          font-size: 1.4rem;
+          color: rgba(201,168,76,0.3);
+          direction: rtl;
+          margin-bottom: 12px;
+        }
+
+        .hero-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 5.8rem;
+          font-weight: 300;
+          line-height: 1;
+          color: #f0e8cc;
+          margin-bottom: 6px;
+          letter-spacing: -0.02em;
+        }
+
+        .hero-title em {
+          font-style: italic;
+          color: #c9a84c;
+        }
+
+        .hero-desc {
+          font-size: 1.1rem;
+          color: rgba(232,223,192,0.48);
+          line-height: 1.75;
+          font-weight: 300;
+          margin: 26px auto 42px;
+          max-width: 460px;
+        }
+
+        .hero-btns {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .btn-primary {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 16px 38px;
+          background: linear-gradient(135deg, #c9a84c, #8b6a1e);
+          border: none;
+          border-radius: 12px;
+          color: #0a1f14;
+          font-family: 'Cinzel', serif;
+          font-size: 0.78rem;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          cursor: pointer;
+          text-decoration: none;
+          transition: all 0.25s;
+          box-shadow: 0 8px 32px rgba(201,168,76,0.28);
+        }
+
+        .btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 40px rgba(201,168,76,0.44);
+        }
+
+        .btn-outline {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 16px 28px;
+          background: transparent;
+          border: 1px solid rgba(201,168,76,0.22);
+          border-radius: 12px;
+          color: rgba(232,223,192,0.6);
+          font-family: 'Cinzel', serif;
+          font-size: 0.72rem;
+          letter-spacing: 0.1em;
+          cursor: pointer;
+          text-decoration: none;
+          transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+          border-color: rgba(201,168,76,0.48);
+          color: #c9a84c;
+        }
+
+        .hero-note {
+          margin-top: 18px;
+          font-size: 0.7rem;
+          color: rgba(232,223,192,0.22);
+          letter-spacing: 0.08em;
+        }
+
+        /* DIVIDER */
+        .divider {
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.16), transparent);
+          margin: 0 0 60px;
+        }
+
+        .section-label {
+          font-family: 'Cinzel', serif;
+          font-size: 0.58rem;
+          letter-spacing: 0.35em;
+          color: rgba(201,168,76,0.38);
+          text-align: center;
+          text-transform: uppercase;
+          margin-bottom: 10px;
+        }
+
+        .section-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 2.4rem;
+          font-weight: 300;
+          text-align: center;
+          color: #f0e8cc;
+          margin-bottom: 44px;
+        }
+
+        /* BENEFITS */
+        .benefits-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 14px;
+          margin-bottom: 72px;
+        }
+
+        @media (max-width: 860px) { .benefits-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 480px) { .benefits-grid { grid-template-columns: 1fr; } }
+
+        .benefit-card {
+          background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+          border: 1px solid rgba(201,168,76,0.12);
+          border-radius: 16px;
+          padding: 22px 18px;
+          position: relative;
+          overflow: hidden;
+          transition: border-color 0.2s;
+        }
+
+        .benefit-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.26), transparent);
+        }
+
+        .benefit-card:hover { border-color: rgba(201,168,76,0.24); }
+
+        .benefit-icon { font-size: 1.6rem; margin-bottom: 12px; }
+
+        .benefit-title {
+          font-family: 'Cinzel', serif;
+          font-size: 0.7rem;
+          font-weight: 500;
+          letter-spacing: 0.06em;
+          color: #c9a84c;
+          margin-bottom: 9px;
+        }
+
+        .benefit-desc {
+          font-size: 0.83rem;
+          color: rgba(232,223,192,0.4);
+          line-height: 1.65;
+          font-weight: 300;
+        }
+
+        /* STEPS */
+        .steps-wrap {
+          position: relative;
+          margin-bottom: 72px;
+        }
+
+        .steps-line {
+          position: absolute;
+          top: 27px; left: 12%; right: 12%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.16), rgba(201,168,76,0.16), transparent);
+        }
+
+        .steps-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 0;
+        }
+
+        @media (max-width: 660px) {
+          .steps-grid { grid-template-columns: 1fr 1fr; }
+          .steps-line { display: none; }
+        }
+
+        .step-item { text-align: center; padding: 0 12px; }
+
+        .step-num {
+          width: 54px; height: 54px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, rgba(201,168,76,0.11), rgba(201,168,76,0.04));
+          border: 1px solid rgba(201,168,76,0.26);
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 18px;
+          font-family: 'Cinzel', serif;
+          font-size: 0.72rem;
+          font-weight: 600;
+          color: #c9a84c;
+          position: relative; z-index: 1;
+        }
+
+        .step-title {
+          font-family: 'Cinzel', serif;
+          font-size: 0.7rem;
+          font-weight: 500;
+          letter-spacing: 0.08em;
+          color: #e8dfc0;
+          margin-bottom: 9px;
+        }
+
+        .step-desc {
+          font-size: 0.8rem;
+          color: rgba(232,223,192,0.36);
+          line-height: 1.6;
+          font-weight: 300;
+        }
+
+        /* BOTTOM CTA */
+        .bottom-cta {
+          text-align: center;
+          padding: 60px 24px;
+          background: linear-gradient(135deg, rgba(201,168,76,0.07), rgba(201,168,76,0.02));
+          border: 1px solid rgba(201,168,76,0.14);
+          border-radius: 22px;
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 48px;
+        }
+
+        .bottom-cta::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.38), transparent);
+        }
+
+        .bottom-cta-ar {
+          font-family: 'Noto Naskh Arabic', serif;
+          font-size: 1.9rem;
+          color: rgba(201,168,76,0.28);
+          direction: rtl;
+          margin-bottom: 14px;
+        }
+
+        .bottom-cta-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 2.8rem;
+          font-weight: 300;
+          color: #f0e8cc;
+          margin-bottom: 10px;
+        }
+
+        .bottom-cta-desc {
+          font-size: 0.95rem;
+          color: rgba(232,223,192,0.38);
+          margin-bottom: 34px;
+          font-weight: 300;
+        }
+
+        /* FOOTER */
+        .land-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
+          padding-top: 22px;
+          border-top: 1px solid rgba(201,168,76,0.08);
+        }
+
+        .footer-copy {
+          font-size: 0.7rem;
+          color: rgba(232,223,192,0.2);
+          letter-spacing: 0.05em;
+        }
+
+        .footer-links { display: flex; gap: 18px; }
+
+        .footer-link {
+          font-family: 'Cinzel', serif;
+          font-size: 0.58rem;
+          letter-spacing: 0.14em;
+          color: rgba(201,168,76,0.28);
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+
+        .footer-link:hover { color: rgba(201,168,76,0.6); }
+      `}</style>
+
+      <div className="land-root">
+        <div className="deco-circle-1" />
+        <div className="deco-circle-2" />
+
+        <div className="land-inner">
+
+          {/* NAV */}
+          <nav className="land-nav">
+            <div className="nav-logo">
+              <div className="nav-logo-icon">🕌</div>
+              <div>
+                <div className="nav-logo-name">AZAN TIME</div>
+                <div className="nav-logo-sub">AUTOMATIC ADHAN</div>
+              </div>
+            </div>
+            <a href={`${API}/auth/lwa`} className="nav-signin">SIGN IN →</a>
+          </nav>
+
+          {/* HERO */}
+          <section className="hero">
+            <div className="hero-eyebrow">
+              <div className="eyebrow-line" />
+              <div className="eyebrow-text">Automatic Adhan for Alexa</div>
+              <div className="eyebrow-line" />
+            </div>
+
+            <div className="hero-ar">أذان تلقائي على أليكسا</div>
+
+            <h1 className="hero-title">Azan <em>Time</em></h1>
+
+            <p className="hero-desc">
+              Hear the Adhan automatically on your Amazon Alexa device at every one of the five daily prayers — based on your local mosque's exact times.
+            </p>
+
+            <div className="hero-btns">
+              <a href={`${API}/auth/lwa`} className="btn-primary">
+                Connect with Amazon →
+              </a>
+              <a href="https://www.amazon.de/dp/B0GS1SD9LF/" target="_blank" rel="noopener noreferrer" className="btn-outline">
+                🔔 Enable Skill
+              </a>
+            </div>
+
+            <div className="hero-note">Free · Secure · No passwords stored</div>
+          </section>
+
+          <div className="divider" />
+
+          {/* BENEFITS */}
+          <div className="section-label">Why Azan Time</div>
+          <h2 className="section-title">Everything you need, nothing you don't</h2>
+          <div className="benefits-grid">
+            {BENEFITS.map((b) => (
+              <div key={b.title} className="benefit-card">
+                <div className="benefit-icon">{b.icon}</div>
+                <div className="benefit-title">{b.title}</div>
+                <div className="benefit-desc">{b.desc}</div>
               </div>
             ))}
           </div>
 
-          {/* Scroll hint */}
-          <div className="animate-fade-up animate-delay-6 mt-16 flex flex-col items-center gap-2"
-            style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px', letterSpacing: '2px' }}>
-            <span className="uppercase">Scroll</span>
-            <div className="w-px h-8" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)' }} />
-          </div>
-        </div>
-      </section>
+          <div className="divider" />
 
-      {/* How it works — cream section */}
-      <section className="px-6 py-24" style={{ background: 'var(--cream)' }}>
-        <div className="max-w-3xl mx-auto">
-
-          <div className="ornament mb-4">
-            <span style={{ color: 'var(--gold)', fontSize: '11px', letterSpacing: '4px' }} className="uppercase">How it works</span>
-          </div>
-          <h2 className="font-display text-center mb-16"
-            style={{ fontSize: 'clamp(36px, 6vw, 56px)', fontWeight: 300, color: 'var(--emerald)', lineHeight: 1.15 }}>
-            Three steps to <em>sacred sound</em>
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {[
-              {
-                num: '١',
-                title: 'Link Amazon',
-                desc: 'Securely connect your Amazon account. We use official Login with Amazon — no passwords stored.',
-              },
-              {
-                num: '٢',
-                title: 'Choose Mosque',
-                desc: 'Search and select your local mosque. We fetch real prayer times directly from your mosque.',
-              },
-              {
-                num: '٣',
-                title: 'Hear the Adhan',
-                desc: 'The Adhan plays automatically on your Alexa at every prayer — Fajr through Isha.',
-              },
-            ].map((s) => (
-              <div key={s.num} className="relative group">
-                <div className="font-display mb-4"
-                  style={{ fontSize: '52px', color: 'var(--gold)', opacity: 0.6, lineHeight: 1 }}>
-                  {s.num}
+          {/* STEPS */}
+          <div className="section-label">Setup</div>
+          <h2 className="section-title">Up and running in minutes</h2>
+          <div className="steps-wrap">
+            <div className="steps-line" />
+            <div className="steps-grid">
+              {STEPS.map((s) => (
+                <div key={s.n} className="step-item">
+                  <div className="step-num">{s.n}</div>
+                  <div className="step-title">{s.title}</div>
+                  <div className="step-desc">{s.desc}</div>
                 </div>
-                <h3 className="font-display mb-2"
-                  style={{ fontSize: '24px', fontWeight: 500, color: 'var(--emerald)' }}>
-                  {s.title}
-                </h3>
-                <p style={{ color: '#5a6672', fontSize: '15px', lineHeight: 1.7, fontWeight: 300 }}>{s.desc}</p>
-                <div className="mt-6 h-px w-12 transition-all duration-500 group-hover:w-24"
-                  style={{ background: 'var(--gold)' }} />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* CTA banner */}
-      <section className="px-6 py-20 pattern-bg relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5"
-          style={{ backgroundImage: 'radial-gradient(circle at 70% 50%, var(--gold) 0%, transparent 60%)' }} />
-        <div className="max-w-xl mx-auto text-center relative z-10">
-          <h2 className="font-display mb-4"
-            style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 300, color: 'white', lineHeight: 1.2 }}>
-            Never miss a prayer <em style={{ color: 'var(--gold-light)' }}>again</em>
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '16px', marginBottom: '32px', fontWeight: 300 }}>
-            Set up in under 2 minutes. Free forever.
-          </p>
-          <Link href="/connect"
-            className="inline-block px-12 py-4 rounded-full font-medium transition-all duration-300 hover:scale-105"
-            style={{ background: 'var(--gold)', color: 'var(--ink)', fontSize: '15px' }}>
-            Get Started →
-          </Link>
-        </div>
-      </section>
+          {/* BOTTOM CTA */}
+          <div className="bottom-cta">
+            <div className="bottom-cta-ar">حي على الصلاة</div>
+            <div className="bottom-cta-title">Ready to begin?</div>
+            <div className="bottom-cta-desc">Connect your Amazon account and never miss a prayer again.</div>
+            <a href={`${API}/auth/lwa`} className="btn-primary" style={{ display: 'inline-flex' }}>
+              Connect with Amazon →
+            </a>
+          </div>
 
-      {/* Footer */}
-      <footer className="px-6 py-8 text-center" style={{ background: 'var(--ink)' }}>
-        <div className="font-display" style={{ color: 'var(--gold)', fontSize: '20px', marginBottom: '4px' }}>
-          Azan Time
-        </div>
-        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '13px' }}>
-          © 2026 · azantime.de
-        </p>
-      </footer>
+          {/* FOOTER */}
+          <footer className="land-footer">
+            <div className="footer-copy">© 2026 Azan Time · azantime.de</div>
+            <div className="footer-links">
+              <a href="/privacy" className="footer-link">PRIVACY</a>
+              <a href="/terms" className="footer-link">TERMS</a>
+              <a href="https://www.amazon.de/dp/B0GS1SD9LF/" target="_blank" rel="noopener noreferrer" className="footer-link">ALEXA SKILL</a>
+            </div>
+          </footer>
 
-    </main>
+        </div>
+      </div>
+    </>
+  )
+}
+
+export default function ConnectPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f2318', color: '#c9a84c', fontFamily: 'serif', fontSize: '1.2rem', letterSpacing: '0.2em' }}>
+        بسم الله...
+      </div>
+    }>
+      <LandingContent />
+    </Suspense>
   )
 }
