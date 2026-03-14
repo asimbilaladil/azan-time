@@ -743,7 +743,7 @@ export default function DashboardPage() {
               <div className="dash-logo-icon">🕌</div>
               <div>
                 <div className="dash-logo-text">AZAN TIME</div>
-                <div className="dash-logo-sub">Automatic Adhan</div>
+                <div className="dash-logo-sub">Automatic Azan</div>
               </div>
             </div>
             <div className="dash-header-right">
@@ -823,12 +823,12 @@ export default function DashboardPage() {
 
             {/* CENTER */}
             <div className="card center-card dash-center">
-              <div className="center-label">Automatic Adhan</div>
+              <div className="center-label">Automatic Azan</div>
 
               {nextPrayer ? (
                 <>
                   <div className="next-prayer-heading">
-                    <span>{nextPrayer.label}</span> Adhan in:
+                    <span>{nextPrayer.label}</span> Azan in:
                   </div>
                   <div className="countdown-row">
                     {countdownH > 0 && (
@@ -859,7 +859,7 @@ export default function DashboardPage() {
                   <tr>
                     <th>Prayer</th>
                     <th style={{ textAlign: 'center' }}>—</th>
-                    <th style={{ textAlign: 'right' }}>Adhan Time</th>
+                    <th style={{ textAlign: 'right' }}>Azan Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -897,9 +897,9 @@ export default function DashboardPage() {
 
               {/* Alexa Skill Card */}
               <div className="card alexa-card">
-                <div className="alexa-title">Hear Adhan on Alexa</div>
+                <div className="alexa-title">Hear Azan on Alexa</div>
                 <p className="alexa-desc">
-                  Enable the Azan Time skill on your Alexa device and hear the Adhan automatically at every prayer — hands-free.
+                  Enable the Azan Time skill on your Alexa device and hear the Azan automatically at every prayer — hands-free.
                 </p>
                 <div className="alexa-brand">
                   <span className="alexa-badge">⌘ amazon</span>
@@ -925,7 +925,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="skill-step">
                     <div className="skill-step-num">3</div>
-                    <span>Set up an Alexa Routine to play Adhan on doorbell press</span>
+                    <span>Set up an Alexa Routine to play Azan on doorbell press</span>
                   </div>
                 </div>
               </div>
