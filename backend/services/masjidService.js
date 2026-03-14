@@ -25,10 +25,16 @@ async function searchMosques(query) {
 }
 
 async function getMosqueTimes(guid) {
-
-  const now = new Date();
-  const day = now.getDate();
-  const month = now.getMonth() + 1;
+  // Use mosque's local date, not server UTC date
+  const [[userRow]] = await db.query(
+    'SELECT timezone FROM users WHERE mosque_guid = ? AND is_active = TRUE LIMIT 1',
+    [guid]
+  );
+  const tz = userRow?.timezone || 'UTC';
+  const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+  const now   = nowLocal;
+  const day   = nowLocal.getDate();
+  const month = nowLocal.getMonth() + 1;
 
   const [rows] = await db.query(
     `SELECT * FROM mosques
@@ -38,11 +44,8 @@ async function getMosqueTimes(guid) {
      AND YEAR(times_date) = YEAR(CURDATE())`,
     [guid, month, day]
   );
-
   if (rows.length > 0) {
-
     const m = rows[0];
-
     return {
       mosque: {
         guid: m.guid,
