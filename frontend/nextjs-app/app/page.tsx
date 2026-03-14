@@ -5,9 +5,9 @@ import { useSearchParams, useRouter } from 'next/navigation'
 const API = process.env.NEXT_PUBLIC_API_URL || '/api'
 
 const BENEFITS = [
-  { icon: '🔔', title: 'Never Miss a Prayer', desc: 'The Adhan plays automatically on your Alexa at the exact time of every prayer.' },
+  { icon: '🔔', title: 'Never Miss a Prayer', desc: 'The Azan plays automatically on your Alexa at the exact time of every prayer.' },
   { icon: '🕌', title: 'Your Mosque\'s Times', desc: 'Select any mosque worldwide and get prayer times specific to your local masjid.' },
-  { icon: '🗣️', title: 'Beautiful Adhan Audio', desc: 'A full high-quality Adhan recitation plays through your Alexa speaker.' },
+  { icon: '🗣️', title: 'Beautiful Azan Audio', desc: 'A full high-quality Azan recitation plays through your Alexa speaker.' },
   { icon: '⚙️', title: 'Fully Automatic', desc: 'Set it once and forget it. Runs 24/7 with automatic timezone handling.' },
 ]
 
@@ -15,7 +15,7 @@ const STEPS = [
   { n: '01', title: 'Connect Amazon', desc: 'Sign in with your Amazon account to link your Alexa devices.' },
   { n: '02', title: 'Choose Mosque', desc: 'Search and select your local mosque for accurate prayer times.' },
   { n: '03', title: 'Enable Skill', desc: 'Enable the Azan Time skill in the Alexa app and set up a routine.' },
-  { n: '04', title: 'Hear the Adhan', desc: 'The Adhan plays automatically on your Echo at every prayer.' },
+  { n: '04', title: 'Hear the Azan', desc: 'The Azan plays automatically on your Echo at every prayer.' },
 ]
 
 function LandingContent() {
@@ -474,7 +474,7 @@ function LandingContent() {
               <div className="nav-logo-icon">🕌</div>
               <div>
                 <div className="nav-logo-name">AZAN TIME</div>
-                <div className="nav-logo-sub">AUTOMATIC ADHAN</div>
+                <div className="nav-logo-sub">AUTOMATIC Azan</div>
               </div>
             </div>
             <a href={`${API}/auth/lwa`} className="nav-signin">SIGN IN →</a>
@@ -484,7 +484,7 @@ function LandingContent() {
           <section className="hero">
             <div className="hero-eyebrow">
               <div className="eyebrow-line" />
-              <div className="eyebrow-text">Automatic Adhan for Alexa</div>
+              <div className="eyebrow-text">Automatic Azan for Alexa</div>
               <div className="eyebrow-line" />
             </div>
 
@@ -493,7 +493,7 @@ function LandingContent() {
             <h1 className="hero-title">Azan <em>Time</em></h1>
 
             <p className="hero-desc">
-              Hear the Adhan automatically on your Amazon Alexa device at every one of the five daily prayers — based on your local mosque's exact times.
+              Hear the Azan automatically on your Amazon Alexa device at every one of the five daily prayers — based on your local mosque's exact times.
             </p>
 
             <div className="hero-btns">
