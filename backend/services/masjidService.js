@@ -133,37 +133,35 @@ async function getMosqueTimes(guid) {
 }
 
 async function checkPrayerTimeNow(guid) {
-
   try {
-
     const { times } = await getMosqueTimes(guid);
 
-    const now = new Date();
+    const [[userRow]] = await db.query(
+      'SELECT timezone FROM users WHERE mosque_guid = ? AND is_active = TRUE LIMIT 1',
+      [guid]
+    );
+    const tz = userRow?.timezone || 'UTC';
 
-    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+    const nowMin = nowLocal.getHours() * 60 + nowLocal.getMinutes();
 
-    for (const prayer of ['fajr','dhuhr','asr','maghrib','isha']) {
+    console.log(`🕐 Local time in ${tz}: ${nowLocal.getHours()}:${String(nowLocal.getMinutes()).padStart(2,'0')} (${nowMin}min)`);
 
+    for (const prayer of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
       if (!times[prayer]) continue;
 
-      const [h,m] = times[prayer].split(':').map(Number);
-
+      const [h, m] = times[prayer].split(':').map(Number);
       const prayerMin = h * 60 + m;
 
       if (nowMin >= prayerMin && nowMin < prayerMin + 1) {
-
         console.log(`Prayer matched: ${prayer}`);
-
         return prayer;
       }
     }
 
     return null;
-
   } catch (err) {
-
     console.error('Prayer check error:', err.message);
-
     return null;
   }
 }
