@@ -35,7 +35,8 @@ async function runScheduler() {
       if (!prayer) continue;
 
       const [users] = await db.query(`
-        SELECT id, device_id, access_token, refresh_token, token_expires_at
+        SELECT id, device_id, access_token, refresh_token, token_expires_at,
+               event_token, event_token_expires, event_refresh_token
         FROM users
         WHERE mosque_guid = ? AND is_active = TRUE AND device_id IS NOT NULL
       `, [mosque_guid]);
