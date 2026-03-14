@@ -23,9 +23,32 @@ router.post('/', async (req, res) => {
     console.log('requestType',requestType)
     // 1️⃣ LaunchRequest (routine opens skill)
     if (requestType === "LaunchRequest") {
+      const { checkPrayerTimeNow } = require('../services/masjidService');
+    
+      let audioUrl = AUDIO_URLS.dhuhr; // fallback
+    
+      try {
+        const [[userRow]] = await db.query(
+          `SELECT mosque_guid FROM users WHERE is_active = TRUE AND device_id IS NOT NULL LIMIT 1`
+        );
+        if (userRow?.mosque_guid) {
+          const prayer = await checkPrayerTimeNow(userRow.mosque_guid);
+          if (prayer && AUDIO_URLS[prayer]) {
+            audioUrl = AUDIO_URLS[prayer];
+            console.log(`🎵 LaunchRequest: playing ${prayer}`);
+          }
+        }
+      } catch (e) {
+        console.error('LaunchRequest prayer detect failed:', e.message);
+      }
+    
       return res.json({
         version: "1.0",
         response: {
+          outputSpeech: {
+            type: "SSML",
+            ssml: "<speak></speak>"
+          },
           directives: [
             {
               type: "AudioPlayer.Play",
@@ -33,7 +56,7 @@ router.post('/', async (req, res) => {
               audioItem: {
                 stream: {
                   token: "adhan",
-                  url: "https://cdn.azantime.de/fajr.mp3",
+                  url: audioUrl,
                   offsetInMilliseconds: 0
                 }
               }
