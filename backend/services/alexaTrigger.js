@@ -45,6 +45,8 @@ async function refreshEventToken(userId) {
     throw new Error('No event_refresh_token found — user must re-enable skill in Alexa app');
   }
 
+  console.log(`🔑 Attempting token refresh for user ${userId}, refresh_token starts with: ${user.event_refresh_token.substring(0, 20)}...`);
+
   const response = await axios.post(
     'https://api.amazon.com/auth/o2/token',
     new URLSearchParams({
@@ -65,7 +67,7 @@ async function refreshEventToken(userId) {
     [newToken, newRefreshToken, expiresIn, userId]
   );
 
-  console.log(`✅ Event token refreshed for user ${userId}`);
+  console.log(`✅ Event token refreshed for user ${userId}, expires in ${expiresIn}s`);
   return newToken;
 }
 
