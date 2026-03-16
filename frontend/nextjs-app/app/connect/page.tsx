@@ -90,7 +90,7 @@ function LandingContent() {
           align-items: center;
           justify-content: space-between;
           padding: 28px 0 20px;
-          border-bottom: 1px solid rgba(201,168,76,0.1);
+          border-bottom: 1px solid rgba(201,168,76,0.12);
         }
 
         .nav-logo { display: flex; align-items: center; gap: 12px; }
@@ -113,27 +113,29 @@ function LandingContent() {
         }
 
         .nav-logo-sub {
-          font-size: 0.62rem;
+          font-size: 0.65rem;
           letter-spacing: 0.2em;
-          color: rgba(201,168,76,0.38);
+          /* ↑ was 0.38, now readable */
+          color: rgba(201,168,76,0.6);
           margin-top: 1px;
         }
 
         .nav-signin {
           font-family: 'Cinzel', serif;
-          font-size: 0.68rem;
+          font-size: 0.72rem;
           letter-spacing: 0.14em;
-          color: rgba(201,168,76,0.55);
+          /* ↑ was 0.55, now clearly visible */
+          color: rgba(201,168,76,0.85);
           text-decoration: none;
-          border: 1px solid rgba(201,168,76,0.22);
+          border: 1px solid rgba(201,168,76,0.35);
           padding: 9px 20px;
           border-radius: 8px;
           transition: all 0.2s;
         }
         .nav-signin:hover {
           color: #c9a84c;
-          border-color: rgba(201,168,76,0.5);
-          background: rgba(201,168,76,0.06);
+          border-color: rgba(201,168,76,0.6);
+          background: rgba(201,168,76,0.08);
         }
 
         /* HERO */
@@ -153,21 +155,23 @@ function LandingContent() {
 
         .eyebrow-line {
           height: 1px; width: 36px;
-          background: rgba(201,168,76,0.35);
+          background: rgba(201,168,76,0.45);
         }
 
         .eyebrow-text {
           font-family: 'Cinzel', serif;
-          font-size: 0.6rem;
+          font-size: 0.65rem;
           letter-spacing: 0.35em;
-          color: rgba(201,168,76,0.5);
+          /* ↑ was 0.5, now readable */
+          color: rgba(201,168,76,0.75);
           text-transform: uppercase;
         }
 
         .hero-ar {
           font-family: 'Noto Naskh Arabic', serif;
           font-size: 1.4rem;
-          color: rgba(201,168,76,0.3);
+          /* ↑ was 0.3, now visible */
+          color: rgba(201,168,76,0.55);
           direction: rtl;
           margin-bottom: 12px;
         }
@@ -188,9 +192,10 @@ function LandingContent() {
         }
 
         .hero-desc {
-          font-size: 1.1rem;
-          color: rgba(232,223,192,0.48);
-          line-height: 1.75;
+          font-size: 1.15rem;
+          /* ↑ was 0.48 — barely visible, now 0.82 */
+          color: rgba(232,223,192,0.82);
+          line-height: 1.8;
           font-weight: 300;
           margin: 26px auto 42px;
           max-width: 460px;
@@ -234,9 +239,10 @@ function LandingContent() {
           gap: 8px;
           padding: 16px 28px;
           background: transparent;
-          border: 1px solid rgba(201,168,76,0.22);
+          border: 1px solid rgba(201,168,76,0.35);
           border-radius: 12px;
-          color: rgba(232,223,192,0.6);
+          /* ↑ was 0.22 */
+          color: rgba(232,223,192,0.85);
           font-family: 'Cinzel', serif;
           font-size: 0.72rem;
           letter-spacing: 0.1em;
@@ -246,29 +252,31 @@ function LandingContent() {
         }
 
         .btn-outline:hover {
-          border-color: rgba(201,168,76,0.48);
+          border-color: rgba(201,168,76,0.55);
           color: #c9a84c;
         }
 
         .hero-note {
           margin-top: 18px;
-          font-size: 0.7rem;
-          color: rgba(232,223,192,0.22);
+          font-size: 0.75rem;
+          /* ↑ was 0.22 — invisible, now 0.55 */
+          color: rgba(232,223,192,0.55);
           letter-spacing: 0.08em;
         }
 
         /* DIVIDER */
         .divider {
           height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.16), transparent);
+          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.18), transparent);
           margin: 0 0 60px;
         }
 
         .section-label {
           font-family: 'Cinzel', serif;
-          font-size: 0.58rem;
+          font-size: 0.65rem;
           letter-spacing: 0.35em;
-          color: rgba(201,168,76,0.38);
+          /* ↑ was 0.38 */
+          color: rgba(201,168,76,0.65);
           text-align: center;
           text-transform: uppercase;
           margin-bottom: 10px;
@@ -276,7 +284,7 @@ function LandingContent() {
 
         .section-title {
           font-family: 'Cormorant Garamond', serif;
-          font-size: 2.4rem;
+          font-size: 2.5rem;
           font-weight: 300;
           text-align: center;
           color: #f0e8cc;
@@ -295,8 +303,8 @@ function LandingContent() {
         @media (max-width: 480px) { .benefits-grid { grid-template-columns: 1fr; } }
 
         .benefit-card {
-          background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
-          border: 1px solid rgba(201,168,76,0.12);
+          background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+          border: 1px solid rgba(201,168,76,0.15);
           border-radius: 16px;
           padding: 22px 18px;
           position: relative;
@@ -309,16 +317,16 @@ function LandingContent() {
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.26), transparent);
+          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent);
         }
 
-        .benefit-card:hover { border-color: rgba(201,168,76,0.24); }
+        .benefit-card:hover { border-color: rgba(201,168,76,0.28); }
 
         .benefit-icon { font-size: 1.6rem; margin-bottom: 12px; }
 
         .benefit-title {
           font-family: 'Cinzel', serif;
-          font-size: 0.7rem;
+          font-size: 0.72rem;
           font-weight: 500;
           letter-spacing: 0.06em;
           color: #c9a84c;
@@ -326,9 +334,10 @@ function LandingContent() {
         }
 
         .benefit-desc {
-          font-size: 0.83rem;
-          color: rgba(232,223,192,0.4);
-          line-height: 1.65;
+          font-size: 0.88rem;
+          /* ↑ was 0.4 — very hard to read, now 0.75 */
+          color: rgba(232,223,192,0.75);
+          line-height: 1.7;
           font-weight: 300;
         }
 
@@ -342,7 +351,7 @@ function LandingContent() {
           position: absolute;
           top: 27px; left: 12%; right: 12%;
           height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.16), rgba(201,168,76,0.16), transparent);
+          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.2), rgba(201,168,76,0.2), transparent);
         }
 
         .steps-grid {
@@ -361,8 +370,8 @@ function LandingContent() {
         .step-num {
           width: 54px; height: 54px;
           border-radius: 50%;
-          background: linear-gradient(135deg, rgba(201,168,76,0.11), rgba(201,168,76,0.04));
-          border: 1px solid rgba(201,168,76,0.26);
+          background: linear-gradient(135deg, rgba(201,168,76,0.13), rgba(201,168,76,0.05));
+          border: 1px solid rgba(201,168,76,0.3);
           display: flex; align-items: center; justify-content: center;
           margin: 0 auto 18px;
           font-family: 'Cinzel', serif;
@@ -374,17 +383,19 @@ function LandingContent() {
 
         .step-title {
           font-family: 'Cinzel', serif;
-          font-size: 0.7rem;
+          font-size: 0.72rem;
           font-weight: 500;
           letter-spacing: 0.08em;
-          color: #e8dfc0;
+          /* ↑ was #e8dfc0 without opacity issue but matched the pattern */
+          color: #f0e8cc;
           margin-bottom: 9px;
         }
 
         .step-desc {
-          font-size: 0.8rem;
-          color: rgba(232,223,192,0.36);
-          line-height: 1.6;
+          font-size: 0.85rem;
+          /* ↑ was 0.36 — nearly invisible, now 0.7 */
+          color: rgba(232,223,192,0.72);
+          line-height: 1.65;
           font-weight: 300;
         }
 
@@ -392,8 +403,8 @@ function LandingContent() {
         .bottom-cta {
           text-align: center;
           padding: 60px 24px;
-          background: linear-gradient(135deg, rgba(201,168,76,0.07), rgba(201,168,76,0.02));
-          border: 1px solid rgba(201,168,76,0.14);
+          background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(201,168,76,0.03));
+          border: 1px solid rgba(201,168,76,0.18);
           border-radius: 22px;
           position: relative;
           overflow: hidden;
@@ -405,13 +416,14 @@ function LandingContent() {
           position: absolute;
           top: 0; left: 0; right: 0;
           height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.38), transparent);
+          background: linear-gradient(90deg, transparent, rgba(201,168,76,0.42), transparent);
         }
 
         .bottom-cta-ar {
           font-family: 'Noto Naskh Arabic', serif;
           font-size: 1.9rem;
-          color: rgba(201,168,76,0.28);
+          /* ↑ was 0.28 */
+          color: rgba(201,168,76,0.5);
           direction: rtl;
           margin-bottom: 14px;
         }
@@ -425,8 +437,9 @@ function LandingContent() {
         }
 
         .bottom-cta-desc {
-          font-size: 0.95rem;
-          color: rgba(232,223,192,0.38);
+          font-size: 1rem;
+          /* ↑ was 0.38 — barely readable, now 0.75 */
+          color: rgba(232,223,192,0.75);
           margin-bottom: 34px;
           font-weight: 300;
         }
@@ -439,12 +452,13 @@ function LandingContent() {
           flex-wrap: wrap;
           gap: 12px;
           padding-top: 22px;
-          border-top: 1px solid rgba(201,168,76,0.08);
+          border-top: 1px solid rgba(201,168,76,0.1);
         }
 
         .footer-copy {
-          font-size: 0.7rem;
-          color: rgba(232,223,192,0.2);
+          font-size: 0.72rem;
+          /* ↑ was 0.2 — invisible, now 0.5 */
+          color: rgba(232,223,192,0.5);
           letter-spacing: 0.05em;
         }
 
@@ -452,14 +466,15 @@ function LandingContent() {
 
         .footer-link {
           font-family: 'Cinzel', serif;
-          font-size: 0.58rem;
+          font-size: 0.62rem;
           letter-spacing: 0.14em;
-          color: rgba(201,168,76,0.28);
+          /* ↑ was 0.28 */
+          color: rgba(201,168,76,0.55);
           text-decoration: none;
           transition: color 0.2s;
         }
 
-        .footer-link:hover { color: rgba(201,168,76,0.6); }
+        .footer-link:hover { color: rgba(201,168,76,0.85); }
       `}</style>
 
       <div className="land-root">
