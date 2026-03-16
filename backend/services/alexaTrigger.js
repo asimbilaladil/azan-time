@@ -42,8 +42,7 @@ async function triggerAlexaDevice(user, prayer) {
   }
 }
 
-// change export at bottom:
-module.exports = { triggerAlexaDevice, refreshEventToken };
+
 
 async function refreshEventToken(userId) {
   const [[user]] = await db.query(
@@ -58,13 +57,16 @@ async function refreshEventToken(userId) {
 
   const response = await axios.post(
     'https://api.amazon.com/auth/o2/token',
-    new URLSearchParams({
+      new URLSearchParams({
       grant_type:    'refresh_token',
       refresh_token: user.event_refresh_token,
       client_id:     process.env.ALEXA_EVENT_CLIENT_ID,
       client_secret: process.env.ALEXA_EVENT_CLIENT_SECRET,
     }),
-    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    { 
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      timeout: 8000  // ← ADD THIS
+    }
   );
 
   const newToken        = response.data.access_token;
