@@ -15,12 +15,13 @@ async function searchMosques(query) {
   const list = r.data?.model?.masjidList || r.data?.data || [];
 
   return list.map(m => ({
-    guid: m.guidId || m.GuidId,
-    name: m.name || m.MasjidName,
-    city: m.cityId || m.City || '',
-    country: m.countryId || m.Country || '',
-    latitude: m.latitude || m.Latitude || null,   // ADD
-    longitude: m.longitude || m.Longitude || null  // ADD
+    guid:      m.guidId    || m.GuidId,
+    name:      m.name      || m.MasjidName,
+    city:      m.city      || null,   // string e.g. "Odense"
+    country:   m.country   || null,   // string e.g. "Denmark"
+    address:   m.address   || null,   // full address string
+    latitude:  m.latitude  || m.Latitude  || null,
+    longitude: m.longitude || m.Longitude || null,
   })).filter(m => m.guid && m.name);
 }
 
@@ -73,8 +74,8 @@ async function getMosqueTimes(guid) {
 
   const details = model.masjidDetails || {};
 
-  const name = details.name || 'Mosque';
-  const city = details.city || '';
+  const name    = details.name    || 'Mosque';
+  const city    = details.city    || '';
   const country = details.country || '';
 
   const salahTimings = model.salahTimings || [];
@@ -86,11 +87,11 @@ async function getMosqueTimes(guid) {
   if (!todayEntry) throw new Error('No timing found');
 
   const times = {
-    fajr: todayEntry.fajr?.[0]?.salahTime || null,
-    dhuhr: todayEntry.zuhr?.[0]?.salahTime || null,
-    asr: todayEntry.asr?.[0]?.salahTime || null,
+    fajr:    todayEntry.fajr?.[0]?.salahTime    || null,
+    dhuhr:   todayEntry.zuhr?.[0]?.salahTime    || null,
+    asr:     todayEntry.asr?.[0]?.salahTime     || null,
     maghrib: todayEntry.maghrib?.[0]?.salahTime || null,
-    isha: todayEntry.isha?.[0]?.salahTime || null
+    isha:    todayEntry.isha?.[0]?.salahTime    || null
   };
 
   const todayDate =
@@ -112,22 +113,12 @@ async function getMosqueTimes(guid) {
     times_date=VALUES(times_date),
     updated_at=NOW()
   `, [
-    guid,
-    name,
-    city,
-    country,
-    times.fajr,
-    times.dhuhr,
-    times.asr,
-    times.maghrib,
-    times.isha,
+    guid, name, city, country,
+    times.fajr, times.dhuhr, times.asr, times.maghrib, times.isha,
     todayDate
   ]);
 
-  console.log(
-    `Fetched ${name} (${city})`,
-    times
-  );
+  console.log(`Fetched ${name} (${city})`, times);
 
   return {
     mosque: { guid, name, city, country },
