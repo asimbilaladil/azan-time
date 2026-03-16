@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const db   = require('./database/mysql');
-const { checkPrayerTimeNow } = require('./services/masjidService');
-const { triggerAlexaDevice } = require('./services/alexaTrigger');
+const { checkPrayerTimeNow, getMosqueTimes } = require('./services/masjidService');
+const { triggerAlexaDevice, refreshEventToken } = require('./services/alexaTrigger');
 
 let isRunning = false;
 
@@ -14,7 +14,6 @@ async function runScheduler() {
   isRunning = true;
 
   try {
-    // Get distinct mosque_guids with active users that have a device linked
     const [mosques] = await db.query(`
       SELECT DISTINCT mosque_guid
       FROM users
@@ -27,11 +26,8 @@ async function runScheduler() {
 
     for (const { mosque_guid } of mosques) {
       console.log("🔍 Checking mosque:", mosque_guid);
-
       const prayer = await checkPrayerTimeNow(mosque_guid);
-
       console.log("🧭 Prayer check result:", prayer);
-      
       if (!prayer) continue;
 
       const [users] = await db.query(`
@@ -58,6 +54,44 @@ async function runScheduler() {
   }
 }
 
+async function preWarmTokens() {
+  try {
+    const [users] = await db.query(`
+      SELECT id, event_token, event_token_expires, event_refresh_token,
+             device_id, mosque_guid, timezone
+      FROM users
+      WHERE is_active = TRUE AND device_id IS NOT NULL AND mosque_guid IS NOT NULL
+    `);
+
+    for (const user of users) {
+      const tz = user.timezone || 'UTC';
+      const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+      const nowMin = nowLocal.getHours() * 60 + nowLocal.getMinutes();
+
+      const { times } = await getMosqueTimes(user.mosque_guid);
+
+      for (const prayer of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
+        if (!times[prayer]) continue;
+        const [h, m] = times[prayer].split(':').map(Number);
+        const prayerMin = h * 60 + m;
+        const diff = prayerMin - nowMin;
+
+        if (diff >= 28 && diff <= 32) {
+          console.log(`🔥 Pre-warming token for ${prayer} in ${diff}min (user ${user.id})`);
+          try {
+            await refreshEventToken(user.id);
+            console.log(`✅ Token pre-warmed for ${prayer}`);
+          } catch (e) {
+            console.error(`❌ Pre-warm failed for user ${user.id}:`, e.message);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('❌ Pre-warm error:', err.message);
+  }
+}
+
 async function logTrigger(userId, prayer, success, errorMessage = null) {
   try {
     await db.query(
@@ -72,6 +106,7 @@ async function logTrigger(userId, prayer, success, errorMessage = null) {
 function startScheduler() {
   console.log('⏰ Prayer scheduler started — running every minute');
   cron.schedule('* * * * *', runScheduler);
+  cron.schedule('* * * * *', preWarmTokens);
   if (process.env.NODE_ENV === 'development') runScheduler();
 }
 
