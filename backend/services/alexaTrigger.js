@@ -110,4 +110,4 @@ function buildDoorbellEvent(endpointId, token) {
   };
 }
 
-module.exports = { triggerAlexaDevice };
+module.exports = { triggerAlexaDevice, refreshEventToken };
