@@ -309,7 +309,7 @@ export default function DashboardPage() {
           line-height: 1.3; margin-bottom: 3px;
         }
 
-        .mosque-address { font-size: 0.75rem; color: rgba(232,223,192,0.5); line-height: 1.4; }
+        .mosque-address { font-size: 0.78rem; color: rgba(232,223,192,0.65); line-height: 1.4; }
 
         .change-btn {
           margin-top: 16px; width: 100%; padding: 10px;
@@ -349,7 +349,7 @@ export default function DashboardPage() {
 
         .search-result-item:hover { background: rgba(201,168,76,0.08); }
         .search-result-item:last-child { border-bottom: none; }
-        .search-result-city { font-size: 0.75rem; color: rgba(232,223,192,0.45); margin-top: 1px; }
+        .search-result-city { font-size: 0.78rem; color: rgba(232,223,192,0.65); margin-top: 2px; }
 
         /* ── CLOCK CARD ── */
         .clock-card { text-align: center; }
@@ -721,7 +721,7 @@ export default function DashboardPage() {
                     {mosque ? (
                       <>
                         <div className="mosque-name">{mosque.name}</div>
-                        <div className="mosque-address">{mosque.city}{mosque.country ? `, ${mosque.country}` : ''}</div>
+                        <div className="mosque-address">{[mosque.city, mosque.country].filter(v => v && !/^\d+$/.test(v.trim())).join(', ') || mosque.country || ''}</div>
                       </>
                     ) : (
                       <div className="mosque-name" style={{ opacity: 0.4 }}>No mosque selected</div>
@@ -751,7 +751,7 @@ export default function DashboardPage() {
                         {results.map((m) => (
                           <button key={m.guid} className="search-result-item" onClick={() => handleSelectMosque(m)} disabled={saving}>
                             <div>{m.name}</div>
-                            <div className="search-result-city">{m.city}{m.country ? `, ${m.country}` : ''}</div>
+                            <div className="search-result-city">{[m.city, m.country].filter(v => v && !/^\d+$/.test(v.trim())).join(', ') || m.country || ''}</div>
                           </button>
                         ))}
                       </div>
