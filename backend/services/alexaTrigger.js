@@ -13,28 +13,37 @@ async function triggerAlexaDevice(user, prayer) {
     eventToken = await refreshEventToken(user.id);
   }
 
-  try {
-    const response = await axios.post(ALEXA_API_URL, buildDoorbellEvent(user.device_id, eventToken), {
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${eventToken}` },
-      timeout: 10000
-    });
-    console.log(`✅ Doorbell triggered ${user.device_id} (${prayer}) — ${response.status}`);
-    return true;
-  } catch (err) {
-    const status = err.response?.status;
-    console.error(`❌ Trigger failed [${status}]:`, JSON.stringify(err.response?.data));
-    if (status === 401) {
-      eventToken = await refreshEventToken(user.id);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
       const response = await axios.post(ALEXA_API_URL, buildDoorbellEvent(user.device_id, eventToken), {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${eventToken}` },
         timeout: 10000
       });
-      console.log(`✅ Retry triggered (${prayer}) — ${response.status}`);
+      console.log(`✅ Doorbell triggered ${user.device_id} (${prayer}) — ${response.status}`);
       return true;
+    } catch (err) {
+      const status = err.response?.status;
+      console.error(`❌ Trigger failed [${status}] attempt ${attempt}/3:`, JSON.stringify(err.response?.data));
+
+      if (status === 401) {
+        console.log(`🔄 Got 401, refreshing token...`);
+        eventToken = await refreshEventToken(user.id);
+      } else if (status === 500 && attempt < 3) {
+        console.log(`⚠️ Alexa 500, waiting 15s before retry...`);
+        await new Promise(r => setTimeout(r, 15000));
+      } else {
+        throw new Error(`Alexa trigger failed: ${err.message}`);
+      }
+
+      if (attempt === 3) {
+        throw new Error(`Alexa trigger failed after 3 attempts`);
+      }
     }
-    throw new Error(`Alexa trigger failed: ${err.message}`);
   }
 }
+
+// change export at bottom:
+module.exports = { triggerAlexaDevice, refreshEventToken };
 
 async function refreshEventToken(userId) {
   const [[user]] = await db.query(
