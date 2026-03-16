@@ -13,6 +13,12 @@ async function runScheduler() {
   }
   isRunning = true;
 
+  // Safety: force-release lock after 45 seconds
+  const lockTimeout = setTimeout(() => {
+    console.error('❌ Scheduler lock timeout — force releasing');
+    isRunning = false;
+  }, 45000);
+
   try {
     const [mosques] = await db.query(`
       SELECT DISTINCT mosque_guid
@@ -50,6 +56,7 @@ async function runScheduler() {
   } catch (err) {
     console.error('❌ Scheduler error:', err.message);
   } finally {
+    clearTimeout(lockTimeout);
     isRunning = false;
   }
 }
