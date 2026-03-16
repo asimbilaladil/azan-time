@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import axios from 'axios'
 
 const API = process.env.NEXT_PUBLIC_API_URL || '/api'
@@ -17,7 +18,6 @@ function getNextPrayer(times: Record<string, string>): { key: string; label: str
   if (!times) return null
   const now = new Date()
   const nowMin = now.getHours() * 60 + now.getMinutes()
-
   for (const p of PRAYERS) {
     if (!times[p.key]) continue
     const [h, m] = times[p.key].split(':').map(Number)
@@ -26,7 +26,6 @@ function getNextPrayer(times: Record<string, string>): { key: string; label: str
       return { key: p.key, label: p.label, time: times[p.key], minutesLeft: pMin - nowMin }
     }
   }
-  // After isha, next is fajr
   if (times.fajr) {
     const [h, m] = times.fajr.split(':').map(Number)
     return { key: 'fajr', label: 'Fajr', time: times.fajr, minutesLeft: (24 * 60 - nowMin) + h * 60 + m }
@@ -69,6 +68,7 @@ export default function DashboardPage() {
   const [results, setResults] = useState<any[]>([])
   const [searching, setSearching] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [fabExpanded, setFabExpanded] = useState(false)
   const searchTimeout = useRef<any>(null)
   const searchRef = useRef<any>(null)
 
@@ -96,9 +96,7 @@ export default function DashboardPage() {
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowSearch(false)
-        setQuery('')
-        setResults([])
+        setShowSearch(false); setQuery(''); setResults([])
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -126,8 +124,7 @@ export default function DashboardPage() {
     try {
       await axios.put(`${API}/user/settings`, { mosque_guid: m.guid }, { headers: { Authorization: `Bearer ${jwt}` } })
       const t = await axios.get(`${API}/mosques/${m.guid}/times`, { headers: { Authorization: `Bearer ${jwt}` } })
-      setMosque(t.data.mosque)
-      setPrayerTimes(t.data.times)
+      setMosque(t.data.mosque); setPrayerTimes(t.data.times)
       setShowSearch(false); setQuery(''); setResults([])
     } catch {}
     setSaving(false)
@@ -135,14 +132,11 @@ export default function DashboardPage() {
 
   const nextPrayer = prayerTimes ? getNextPrayer(prayerTimes) : null
   const currentPrayer = prayerTimes ? getCurrentPrayerKey(prayerTimes) : null
-
   const hours = String(now.getHours()).padStart(2, '0')
   const minutes = String(now.getMinutes()).padStart(2, '0')
   const seconds = String(now.getSeconds()).padStart(2, '0')
-
   const hijriDate = getHijriDate()
   const gregorianDate = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-
   const countdownH = nextPrayer ? Math.floor(nextPrayer.minutesLeft / 60) : 0
   const countdownM = nextPrayer ? nextPrayer.minutesLeft % 60 : 0
 
@@ -158,12 +152,11 @@ export default function DashboardPage() {
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Cinzel:wght@400;500;600&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap');
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body { background: #0f2d1c; }
 
         .dash-root {
           min-height: 100vh;
-          background: 
+          background:
             radial-gradient(ellipse at 20% 0%, rgba(139,101,30,0.18) 0%, transparent 50%),
             radial-gradient(ellipse at 80% 100%, rgba(10,80,45,0.35) 0%, transparent 50%),
             linear-gradient(160deg, #1a3d28 0%, #0f2318 40%, #132d1e 100%);
@@ -174,12 +167,11 @@ export default function DashboardPage() {
           overflow-x: hidden;
         }
 
-        /* Subtle geometric pattern overlay */
         .dash-root::before {
           content: '';
           position: fixed;
           inset: 0;
-          background-image: 
+          background-image:
             repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(201,168,76,0.03) 59px, rgba(201,168,76,0.03) 60px),
             repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(201,168,76,0.03) 59px, rgba(201,168,76,0.03) 60px);
           pointer-events: none;
@@ -299,421 +291,387 @@ export default function DashboardPage() {
         }
 
         /* ── MOSQUE CARD ── */
-        .mosque-card {
-          display: flex;
-          align-items: flex-start;
-          gap: 14px;
-        }
+        .mosque-card { display: flex; align-items: flex-start; gap: 14px; }
 
         .mosque-img {
-          width: 52px;
-          height: 52px;
-          border-radius: 12px;
+          width: 52px; height: 52px; border-radius: 12px;
           background: linear-gradient(135deg, rgba(201,168,76,0.15), rgba(201,168,76,0.05));
           border: 1px solid rgba(201,168,76,0.2);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 26px;
-          flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 26px; flex-shrink: 0;
         }
 
         .mosque-info { flex: 1; min-width: 0; }
 
         .mosque-name {
           font-family: 'Cormorant Garamond', serif;
-          font-size: 1.05rem;
-          font-weight: 600;
-          color: #e8dfc0;
-          line-height: 1.3;
-          margin-bottom: 3px;
+          font-size: 1.05rem; font-weight: 600; color: #e8dfc0;
+          line-height: 1.3; margin-bottom: 3px;
         }
 
-        .mosque-address {
-          font-size: 0.75rem;
-          color: rgba(232,223,192,0.5);
-          line-height: 1.4;
-        }
+        .mosque-address { font-size: 0.75rem; color: rgba(232,223,192,0.5); line-height: 1.4; }
 
         .change-btn {
-          margin-top: 16px;
-          width: 100%;
-          padding: 10px;
-          background: transparent;
-          border: 1px solid rgba(201,168,76,0.35);
-          border-radius: 10px;
-          color: #c9a84c;
-          font-family: 'Cinzel', serif;
-          font-size: 0.72rem;
-          letter-spacing: 0.12em;
-          cursor: pointer;
-          transition: all 0.2s;
+          margin-top: 16px; width: 100%; padding: 10px;
+          background: transparent; border: 1px solid rgba(201,168,76,0.35);
+          border-radius: 10px; color: #c9a84c;
+          font-family: 'Cinzel', serif; font-size: 0.72rem;
+          letter-spacing: 0.12em; cursor: pointer; transition: all 0.2s;
         }
 
-        .change-btn:hover {
-          background: rgba(201,168,76,0.1);
-          border-color: rgba(201,168,76,0.6);
-        }
+        .change-btn:hover { background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.6); }
 
-        /* Search dropdown */
-        .search-wrap {
-          margin-top: 14px;
-          position: relative;
-        }
+        .search-wrap { margin-top: 14px; position: relative; }
 
         .search-input {
-          width: 100%;
-          padding: 10px 14px;
-          background: rgba(0,0,0,0.3);
-          border: 1px solid rgba(201,168,76,0.3);
-          border-radius: 10px;
-          color: #e8dfc0;
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 0.95rem;
-          outline: none;
+          width: 100%; padding: 10px 14px;
+          background: rgba(0,0,0,0.3); border: 1px solid rgba(201,168,76,0.3);
+          border-radius: 10px; color: #e8dfc0;
+          font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; outline: none;
         }
 
         .search-input::placeholder { color: rgba(232,223,192,0.35); }
         .search-input:focus { border-color: rgba(201,168,76,0.6); }
 
         .search-results {
-          margin-top: 6px;
-          background: #0d2a1a;
-          border: 1px solid rgba(201,168,76,0.2);
-          border-radius: 10px;
-          overflow: hidden;
-          max-height: 220px;
-          overflow-y: auto;
+          margin-top: 6px; background: #0d2a1a;
+          border: 1px solid rgba(201,168,76,0.2); border-radius: 10px;
+          overflow: hidden; max-height: 220px; overflow-y: auto;
         }
 
         .search-result-item {
-          width: 100%;
-          text-align: left;
-          padding: 10px 14px;
-          background: transparent;
-          border: none;
-          color: #e8dfc0;
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 0.9rem;
-          cursor: pointer;
-          border-bottom: 1px solid rgba(201,168,76,0.08);
+          width: 100%; text-align: left; padding: 10px 14px;
+          background: transparent; border: none; color: #e8dfc0;
+          font-family: 'Cormorant Garamond', serif; font-size: 0.9rem;
+          cursor: pointer; border-bottom: 1px solid rgba(201,168,76,0.08);
           transition: background 0.15s;
         }
 
         .search-result-item:hover { background: rgba(201,168,76,0.08); }
         .search-result-item:last-child { border-bottom: none; }
-
-        .search-result-city {
-          font-size: 0.75rem;
-          color: rgba(232,223,192,0.45);
-          margin-top: 1px;
-        }
+        .search-result-city { font-size: 0.75rem; color: rgba(232,223,192,0.45); margin-top: 1px; }
 
         /* ── CLOCK CARD ── */
         .clock-card { text-align: center; }
 
-        .clock-icons {
-          display: flex;
-          justify-content: center;
-          gap: 20px;
-          margin-bottom: 16px;
-          font-size: 1.1rem;
-          opacity: 0.6;
-        }
+        .clock-icons { display: flex; justify-content: center; gap: 20px; margin-bottom: 16px; font-size: 1.1rem; opacity: 0.6; }
 
         .clock-time {
-          font-family: 'Cinzel', serif;
-          font-size: 3.8rem;
-          font-weight: 400;
-          color: #c9a84c;
-          letter-spacing: 0.04em;
-          line-height: 1;
-          text-shadow: 0 0 30px rgba(201,168,76,0.4);
-          margin-bottom: 4px;
+          font-family: 'Cinzel', serif; font-size: 3.8rem; font-weight: 400;
+          color: #c9a84c; letter-spacing: 0.04em; line-height: 1;
+          text-shadow: 0 0 30px rgba(201,168,76,0.4); margin-bottom: 4px;
         }
 
-        .clock-seconds {
-          font-size: 1.4rem;
-          opacity: 0.5;
-          vertical-align: super;
-        }
+        .clock-seconds { font-size: 1.4rem; opacity: 0.5; vertical-align: super; }
 
         .clock-hijri {
-          font-family: 'Noto Naskh Arabic', serif;
-          font-size: 0.85rem;
-          color: rgba(201,168,76,0.7);
-          margin-top: 6px;
-          direction: rtl;
+          font-family: 'Noto Naskh Arabic', serif; font-size: 0.85rem;
+          color: rgba(201,168,76,0.7); margin-top: 6px; direction: rtl;
         }
 
-        .clock-gregorian {
-          font-size: 0.8rem;
-          color: rgba(232,223,192,0.4);
-          margin-top: 4px;
-          letter-spacing: 0.05em;
-        }
+        .clock-gregorian { font-size: 0.8rem; color: rgba(232,223,192,0.4); margin-top: 4px; letter-spacing: 0.05em; }
 
         /* ── CENTER CARD ── */
-        .center-card {
-          padding: 32px 36px;
-        }
+        .center-card { padding: 32px 36px; }
 
         .center-label {
-          font-family: 'Cinzel', serif;
-          font-size: 0.7rem;
-          letter-spacing: 0.25em;
-          text-transform: uppercase;
-          color: rgba(201,168,76,0.6);
-          text-align: center;
-          margin-bottom: 6px;
+          font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.25em;
+          text-transform: uppercase; color: rgba(201,168,76,0.6); text-align: center; margin-bottom: 6px;
         }
 
         .next-prayer-heading {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 2.4rem;
-          font-weight: 300;
-          text-align: center;
-          color: #e8dfc0;
-          margin-bottom: 2px;
+          font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 300;
+          text-align: center; color: #e8dfc0; margin-bottom: 2px;
         }
 
-        .next-prayer-heading span {
-          color: #c9a84c;
-          font-weight: 600;
-        }
+        .next-prayer-heading span { color: #c9a84c; font-weight: 600; }
 
         .countdown-row {
-          display: flex;
-          align-items: baseline;
-          justify-content: center;
-          gap: 6px;
-          margin: 16px 0 28px;
+          display: flex; align-items: baseline; justify-content: center;
+          gap: 6px; margin: 16px 0 28px;
         }
 
         .countdown-num {
-          font-family: 'Cinzel', serif;
-          font-size: 3.5rem;
-          font-weight: 600;
-          color: #c9a84c;
-          text-shadow: 0 0 40px rgba(201,168,76,0.5);
-          line-height: 1;
+          font-family: 'Cinzel', serif; font-size: 3.5rem; font-weight: 600;
+          color: #c9a84c; text-shadow: 0 0 40px rgba(201,168,76,0.5); line-height: 1;
         }
 
         .countdown-unit {
-          font-size: 0.75rem;
-          color: rgba(201,168,76,0.5);
-          letter-spacing: 0.15em;
-          text-transform: uppercase;
-          align-self: flex-end;
-          margin-bottom: 8px;
+          font-size: 0.75rem; color: rgba(201,168,76,0.5); letter-spacing: 0.15em;
+          text-transform: uppercase; align-self: flex-end; margin-bottom: 8px;
         }
 
-        .countdown-sep {
-          font-family: 'Cinzel', serif;
-          font-size: 2.5rem;
-          color: rgba(201,168,76,0.3);
-          line-height: 1;
-        }
+        .countdown-sep { font-family: 'Cinzel', serif; font-size: 2.5rem; color: rgba(201,168,76,0.3); line-height: 1; }
 
-        /* Prayer table */
         .prayer-divider {
           height: 1px;
           background: linear-gradient(90deg, transparent, rgba(201,168,76,0.2), transparent);
           margin-bottom: 20px;
         }
 
-        .prayer-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
+        .prayer-table { width: 100%; border-collapse: collapse; }
 
         .prayer-table thead th {
-          font-family: 'Cinzel', serif;
-          font-size: 0.65rem;
-          letter-spacing: 0.2em;
-          color: rgba(201,168,76,0.45);
-          text-transform: uppercase;
-          padding-bottom: 10px;
-          font-weight: 400;
-          text-align: left;
+          font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.2em;
+          color: rgba(201,168,76,0.45); text-transform: uppercase; padding-bottom: 10px;
+          font-weight: 400; text-align: left;
         }
 
         .prayer-table thead th:last-child { text-align: right; }
         .prayer-table thead th:nth-child(2) { text-align: center; }
 
-        .prayer-row {
-          border-top: 1px solid rgba(201,168,76,0.06);
-          transition: background 0.15s;
-        }
-
+        .prayer-row { border-top: 1px solid rgba(201,168,76,0.06); transition: background 0.15s; }
         .prayer-row:hover { background: rgba(201,168,76,0.04); }
+        .prayer-row.active { background: linear-gradient(90deg, rgba(201,168,76,0.1), rgba(201,168,76,0.04)); }
+        .prayer-row td { padding: 11px 6px; font-size: 1rem; }
 
-        .prayer-row.active {
-          background: linear-gradient(90deg, rgba(201,168,76,0.1), rgba(201,168,76,0.04));
-        }
-
-        .prayer-row td {
-          padding: 11px 6px;
-          font-size: 1rem;
-        }
-
-        .prayer-icon-label {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          color: #e8dfc0;
-        }
-
+        .prayer-icon-label { display: flex; align-items: center; gap: 10px; color: #e8dfc0; }
         .prayer-icon-label.active { color: #c9a84c; font-weight: 600; }
 
         .prayer-icon {
-          width: 28px;
-          height: 28px;
-          border-radius: 8px;
+          width: 28px; height: 28px; border-radius: 8px;
           background: rgba(201,168,76,0.08);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 14px;
-          flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 14px; flex-shrink: 0;
         }
 
-        .active .prayer-icon {
-          background: rgba(201,168,76,0.18);
-        }
+        .active .prayer-icon { background: rgba(201,168,76,0.18); }
 
         .prayer-label-en { font-size: 0.95rem; }
+
         .prayer-label-ar {
-          font-family: 'Noto Naskh Arabic', serif;
-          font-size: 0.95rem;
-          text-align: center;
-          color: rgba(232,223,192,0.5);
-          direction: rtl;
+          font-family: 'Noto Naskh Arabic', serif; font-size: 0.95rem;
+          text-align: center; color: rgba(232,223,192,0.5); direction: rtl;
         }
+
         .active .prayer-label-ar { color: rgba(201,168,76,0.7); }
 
         .prayer-time-cell {
-          text-align: right;
-          font-family: 'Cinzel', serif;
-          font-size: 0.95rem;
-          color: rgba(232,223,192,0.75);
-          letter-spacing: 0.05em;
+          text-align: right; font-family: 'Cinzel', serif; font-size: 0.95rem;
+          color: rgba(232,223,192,0.75); letter-spacing: 0.05em;
         }
 
         .active .prayer-time-cell { color: #c9a84c; }
 
         .active-badge {
           display: inline-block;
-          background: rgba(201,168,76,0.15);
-          border: 1px solid rgba(201,168,76,0.3);
-          border-radius: 4px;
-          font-size: 0.6rem;
-          letter-spacing: 0.12em;
-          color: #c9a84c;
-          padding: 1px 6px;
-          margin-left: 6px;
-          font-family: 'Cinzel', serif;
-          vertical-align: middle;
+          background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3);
+          border-radius: 4px; font-size: 0.6rem; letter-spacing: 0.12em;
+          color: #c9a84c; padding: 1px 6px; margin-left: 6px;
+          font-family: 'Cinzel', serif; vertical-align: middle;
         }
 
         /* ── RIGHT CARDS ── */
-        .alexa-card { }
-
         .alexa-title {
-          font-family: 'Cinzel', serif;
-          font-size: 0.9rem;
-          font-weight: 500;
-          letter-spacing: 0.08em;
-          color: #e8dfc0;
-          margin-bottom: 8px;
+          font-family: 'Cinzel', serif; font-size: 0.9rem; font-weight: 500;
+          letter-spacing: 0.08em; color: #e8dfc0; margin-bottom: 8px;
         }
 
-        .alexa-desc {
-          font-size: 0.83rem;
-          color: rgba(232,223,192,0.5);
-          line-height: 1.6;
-          margin-bottom: 16px;
-        }
+        .alexa-desc { font-size: 0.83rem; color: rgba(232,223,192,0.5); line-height: 1.6; margin-bottom: 16px; }
 
-        .alexa-brand {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          margin-bottom: 16px;
-        }
+        .alexa-brand { display: flex; align-items: center; gap: 6px; margin-bottom: 16px; }
 
         .alexa-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          background: rgba(0,168,232,0.1);
-          border: 1px solid rgba(0,168,232,0.2);
-          border-radius: 6px;
-          padding: 3px 10px;
-          font-size: 0.72rem;
-          color: #52c8f0;
-          letter-spacing: 0.08em;
+          display: inline-flex; align-items: center; gap: 4px;
+          background: rgba(0,168,232,0.1); border: 1px solid rgba(0,168,232,0.2);
+          border-radius: 6px; padding: 3px 10px; font-size: 0.72rem;
+          color: #52c8f0; letter-spacing: 0.08em;
         }
 
         .skill-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          width: 100%;
-          padding: 13px;
+          display: flex; align-items: center; justify-content: center; gap: 10px;
+          width: 100%; padding: 13px;
           background: linear-gradient(135deg, #c9a84c, #8b6a1e);
-          border: none;
-          border-radius: 10px;
-          color: #0a1f14;
-          font-family: 'Cinzel', serif;
-          font-size: 0.75rem;
-          font-weight: 600;
-          letter-spacing: 0.15em;
-          cursor: pointer;
-          transition: all 0.2s;
-          box-shadow: 0 4px 20px rgba(201,168,76,0.25);
-          text-decoration: none;
+          border: none; border-radius: 10px; color: #0a1f14;
+          font-family: 'Cinzel', serif; font-size: 0.75rem; font-weight: 600;
+          letter-spacing: 0.15em; cursor: pointer; transition: all 0.2s;
+          box-shadow: 0 4px 20px rgba(201,168,76,0.25); text-decoration: none;
         }
 
-        .skill-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 28px rgba(201,168,76,0.4);
-        }
+        .skill-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(201,168,76,0.4); }
 
-        .skill-btn-icon {
-          font-size: 1.1rem;
-        }
+        .skill-steps { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 
-        .skill-steps {
-          margin-top: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .skill-step {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          font-size: 0.78rem;
-          color: rgba(232,223,192,0.5);
-          line-height: 1.4;
-        }
+        .skill-step { display: flex; align-items: flex-start; gap: 10px; font-size: 0.78rem; color: rgba(232,223,192,0.5); line-height: 1.4; }
 
         .skill-step-num {
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          border: 1px solid rgba(201,168,76,0.3);
-          color: rgba(201,168,76,0.6);
-          font-family: 'Cinzel', serif;
-          font-size: 0.6rem;
+          width: 18px; height: 18px; border-radius: 50%;
+          border: 1px solid rgba(201,168,76,0.3); color: rgba(201,168,76,0.6);
+          font-family: 'Cinzel', serif; font-size: 0.6rem;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; margin-top: 1px;
+        }
+
+        /* ── SETUP GUIDE LINK ── */
+        .setup-guide-link {
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
-          margin-top: 1px;
+          gap: 8px;
+          margin-top: 14px;
+          padding: 9px 14px;
+          background: transparent;
+          border: 1px dashed rgba(201,168,76,0.25);
+          border-radius: 10px;
+          color: rgba(201,168,76,0.6);
+          font-family: 'Cinzel', serif;
+          font-size: 0.68rem;
+          letter-spacing: 0.12em;
+          text-decoration: none;
+          transition: all 0.2s;
+          text-align: center;
+        }
+
+        .setup-guide-link:hover {
+          border-color: rgba(201,168,76,0.5);
+          color: #c9a84c;
+          background: rgba(201,168,76,0.05);
+        }
+
+        /* ── FLOATING ACTION BUTTON ── */
+        .fab-container {
+          position: fixed;
+          bottom: 28px;
+          right: 28px;
+          z-index: 100;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 10px;
+        }
+
+        /* Tooltip bubble */
+        .fab-tooltip {
+          background: rgba(10,26,18,0.97);
+          border: 1px solid rgba(201,168,76,0.3);
+          border-radius: 14px;
+          padding: 14px 18px;
+          width: 230px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+          transform: translateY(4px) scale(0.96);
+          opacity: 0;
+          pointer-events: none;
+          transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        .fab-tooltip.visible {
+          transform: translateY(0) scale(1);
+          opacity: 1;
+          pointer-events: all;
+        }
+
+        /* small arrow pointing down-right */
+        .fab-tooltip::after {
+          content: '';
+          position: absolute;
+          bottom: -7px;
+          right: 20px;
+          width: 12px;
+          height: 12px;
+          background: rgba(10,26,18,0.97);
+          border-right: 1px solid rgba(201,168,76,0.3);
+          border-bottom: 1px solid rgba(201,168,76,0.3);
+          transform: rotate(45deg);
+        }
+
+        .fab-tooltip-title {
+          font-family: 'Cinzel', serif;
+          font-size: 0.72rem;
+          letter-spacing: 0.12em;
+          color: #c9a84c;
+          margin-bottom: 5px;
+        }
+
+        .fab-tooltip-desc {
+          font-size: 0.8rem;
+          color: rgba(232,223,192,0.55);
+          line-height: 1.5;
+          margin-bottom: 12px;
+        }
+
+        .fab-tooltip-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 7px;
+          width: 100%;
+          padding: 9px;
+          background: linear-gradient(135deg, #c9a84c, #8b6a1e);
+          border: none;
+          border-radius: 8px;
+          color: #0a1f14;
+          font-family: 'Cinzel', serif;
+          font-size: 0.68rem;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .fab-tooltip-btn:hover {
+          box-shadow: 0 4px 16px rgba(201,168,76,0.35);
+        }
+
+        /* Main FAB button */
+        .fab-btn {
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #c9a84c, #8b6a1e);
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 20px rgba(201,168,76,0.35), 0 0 0 0 rgba(201,168,76,0.4);
+          transition: all 0.25s;
+          position: relative;
+          animation: fab-pulse 3s ease-in-out infinite;
+        }
+
+        .fab-btn:hover {
+          transform: scale(1.08);
+          box-shadow: 0 6px 28px rgba(201,168,76,0.5);
+          animation: none;
+        }
+
+        .fab-btn.open {
+          background: linear-gradient(135deg, #8b6a1e, #c9a84c);
+          animation: none;
+        }
+
+        @keyframes fab-pulse {
+          0%, 100% { box-shadow: 0 4px 20px rgba(201,168,76,0.35), 0 0 0 0 rgba(201,168,76,0.4); }
+          50% { box-shadow: 0 4px 20px rgba(201,168,76,0.35), 0 0 0 10px rgba(201,168,76,0); }
+        }
+
+        .fab-icon {
+          font-size: 22px;
+          transition: transform 0.25s;
+          color: #0a1f14;
+          font-weight: 700;
+          line-height: 1;
+        }
+
+        .fab-btn.open .fab-icon { transform: rotate(45deg); }
+
+        /* Unread dot */
+        .fab-dot {
+          position: absolute;
+          top: 3px;
+          right: 3px;
+          width: 12px;
+          height: 12px;
+          background: #e74c3c;
+          border-radius: 50%;
+          border: 2px solid #0f2318;
+          animation: dot-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dot-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
         }
 
         /* ── FOOTER ── */
@@ -729,9 +687,7 @@ export default function DashboardPage() {
           text-transform: uppercase;
         }
 
-        .footer-mosque-name {
-          color: rgba(201,168,76,0.55);
-        }
+        .footer-mosque-name { color: rgba(201,168,76,0.55); }
       `}</style>
 
       <div className="dash-root">
@@ -772,11 +728,9 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </div>
-
                 <button className="change-btn" onClick={() => setShowSearch(!showSearch)}>
                   {showSearch ? '✕ CANCEL' : '⟳ CHANGE MASJID'}
                 </button>
-
                 {showSearch && (
                   <div className="search-wrap">
                     <input
@@ -818,13 +772,11 @@ export default function DashboardPage() {
                 {hijriDate && <div className="clock-hijri">{hijriDate}</div>}
                 <div className="clock-gregorian">{gregorianDate}</div>
               </div>
-
             </div>
 
             {/* CENTER */}
             <div className="card center-card dash-center">
               <div className="center-label">Automatic Azan</div>
-
               {nextPrayer ? (
                 <>
                   <div className="next-prayer-heading">
@@ -851,9 +803,7 @@ export default function DashboardPage() {
                   Select a mosque to begin
                 </div>
               )}
-
               <div className="prayer-divider" />
-
               <table className="prayer-table">
                 <thead>
                   <tr>
@@ -894,9 +844,7 @@ export default function DashboardPage() {
 
             {/* RIGHT */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-              {/* Alexa Skill Card */}
-              <div className="card alexa-card">
+              <div className="card">
                 <div className="alexa-title">Hear Azan on Alexa</div>
                 <p className="alexa-desc">
                   Enable the Azan Time skill on your Alexa device and hear the Azan automatically at every prayer — hands-free.
@@ -911,13 +859,13 @@ export default function DashboardPage() {
                   rel="noopener noreferrer"
                   className="skill-btn"
                 >
-                  <span className="skill-btn-icon">🔔</span>
+                  <span>🔔</span>
                   ENABLE ALEXA SKILL
                 </a>
                 <div className="skill-steps">
                   <div className="skill-step">
                     <div className="skill-step-num">1</div>
-                    <span>Click the button above to open the skill in the Amazon Alexa store</span>
+                    <span>Open the Alexa skill in the Amazon store</span>
                   </div>
                   <div className="skill-step">
                     <div className="skill-step-num">2</div>
@@ -925,11 +873,15 @@ export default function DashboardPage() {
                   </div>
                   <div className="skill-step">
                     <div className="skill-step-num">3</div>
-                    <span>Set up an Alexa Routine to play Azan on doorbell press</span>
+                    <span>Set up an Alexa Routine to play Azan</span>
                   </div>
                 </div>
-              </div>
 
+                {/* Step-by-step guide link */}
+                <Link href="/alexa-setup" className="setup-guide-link">
+                  📖 &nbsp;View full setup guide →
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -940,8 +892,36 @@ export default function DashboardPage() {
               {mosque.city ? ` | ${mosque.city.toUpperCase()}` : ''}
             </footer>
           )}
-
         </div>
+      </div>
+
+      {/* ── FLOATING HELP BUTTON ── */}
+      <div className="fab-container">
+        {/* Tooltip */}
+        <div className={`fab-tooltip${fabExpanded ? ' visible' : ''}`}>
+          <div className="fab-tooltip-title">ALEXA SETUP GUIDE</div>
+          <div className="fab-tooltip-desc">
+            New here? Follow our step-by-step guide to hear Azan on your Alexa device.
+          </div>
+          <Link
+            href="/alexa-setup"
+            className="fab-tooltip-btn"
+            onClick={() => setFabExpanded(false)}
+          >
+            📖 &nbsp;Open Setup Guide →
+          </Link>
+        </div>
+
+        {/* FAB */}
+        <button
+          className={`fab-btn${fabExpanded ? ' open' : ''}`}
+          onClick={() => setFabExpanded(!fabExpanded)}
+          aria-label="Alexa setup guide"
+          title="Alexa Setup Guide"
+        >
+          {!fabExpanded && <div className="fab-dot" />}
+          <span className="fab-icon">{fabExpanded ? '✕' : '?'}</span>
+        </button>
       </div>
     </>
   )
