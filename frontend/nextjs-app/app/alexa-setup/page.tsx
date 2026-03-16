@@ -157,7 +157,7 @@ function ScreenStep5() {
     <div style={{ display:'flex', flexDirection:'column', height:'100%' }}>
       <div style={{ background:'#f8f8f8', padding:'8px 10px 6px', fontSize:'8px', fontFamily:'sans-serif', fontWeight:700, textAlign:'center', borderBottom:'1px solid #e8e8e8', color:'#333' }}>Choose Device</div>
       <div style={{ flex:1, padding:'8px 0' }}>
-        {['Asim\'s Echo Dot', 'Azan'].map((name, i) => (
+        {['Echo Dot', 'Azan'].map((name, i) => (
           <div key={i} style={{ padding:'9px 12px', borderBottom:'1px solid #f0f0f0', display:'flex', alignItems:'center', gap:8, background: name === 'Azan' ? 'rgba(26,115,232,0.06)' : 'transparent' }}>
             <span style={{ fontSize:12 }}>🏠</span>
             <span style={{ fontSize:'8px', fontFamily:'sans-serif', color: name === 'Azan' ? '#1a73e8' : '#222', fontWeight: name === 'Azan' ? 700 : 400 }}>{name}</span>
@@ -183,7 +183,7 @@ function ScreenStep6() {
           </div>
           <span style={{ fontSize:'6px', color:'#1a73e8', marginLeft:'auto' }}>← tap</span>
         </div>
-        {['Dog bark','myTuner Radio','My Pod'].map((s,i) => (
+        {['myTuner Radio','My Pod'].map((s,i) => (
           <div key={i} style={{ padding:'7px 10px', borderBottom:'1px solid #f5f5f5', fontSize:'7.5px', fontFamily:'sans-serif', color:'#555' }}>{s}</div>
         ))}
       </div>
@@ -311,8 +311,8 @@ export default function AlexaSetupPage() {
         .sp-hero { text-align:center; margin-bottom:44px; }
 
         .sp-eyebrow {
-          font-family:'Cinzel',serif; font-size:0.65rem; letter-spacing:0.35em;
-          text-transform:uppercase; color:rgba(201,168,76,0.5); margin-bottom:12px;
+          font-family:'Cinzel',serif; font-size:0.68rem; letter-spacing:0.35em;
+          text-transform:uppercase; color:rgba(201,168,76,0.7); margin-bottom:12px;
         }
 
         .sp-title {
@@ -322,8 +322,8 @@ export default function AlexaSetupPage() {
         }
         .sp-title span { color:#c9a84c; font-style:italic; }
 
-        .sp-ar { font-family:'Noto Naskh Arabic',serif; font-size:1.2rem; color:rgba(201,168,76,0.5); direction:rtl; margin-bottom:16px; }
-        .sp-desc { font-size:1rem; color:rgba(232,223,192,0.5); max-width:520px; margin:0 auto; line-height:1.7; }
+        .sp-ar { font-family:'Noto Naskh Arabic',serif; font-size:1.2rem; color:rgba(201,168,76,0.7); direction:rtl; margin-bottom:16px; }
+        .sp-desc { font-size:1.05rem; color:rgba(232,223,192,0.82); max-width:520px; margin:0 auto; line-height:1.8; }
 
         /* ── PHASE TABS ── */
         .sp-phases {
@@ -337,7 +337,7 @@ export default function AlexaSetupPage() {
           border:1px solid rgba(201,168,76,0.18);
           border-radius:30px;
           font-family:'Cinzel',serif; font-size:0.72rem; letter-spacing:0.12em;
-          color:rgba(201,168,76,0.4);
+          color:rgba(201,168,76,0.65);
           cursor:pointer; transition:all 0.2s;
           text-transform:uppercase;
         }
@@ -422,14 +422,14 @@ export default function AlexaSetupPage() {
 
         .sp-step-info { flex:1; min-width:0; }
         .sp-step-phase-tag {
-          font-family:'Cinzel',serif; font-size:0.58rem; letter-spacing:0.18em;
-          text-transform:uppercase; color:rgba(201,168,76,0.4); margin-bottom:3px;
+          font-family:'Cinzel',serif; font-size:0.6rem; letter-spacing:0.18em;
+          text-transform:uppercase; color:rgba(201,168,76,0.6); margin-bottom:3px;
         }
-        .active .sp-step-phase-tag { color:rgba(201,168,76,0.65); }
+        .active .sp-step-phase-tag { color:rgba(201,168,76,0.85); }
 
         .sp-step-title {
-          font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:600;
-          color:#e8dfc0; line-height:1.2;
+          font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:600;
+          color:#f0e8cc; line-height:1.2;
         }
 
         .sp-chevron {
@@ -447,14 +447,14 @@ export default function AlexaSetupPage() {
         }
 
         .sp-step-desc {
-          font-size:0.97rem; color:rgba(232,223,192,0.72); line-height:1.7; margin-bottom:10px;
+          font-size:1.02rem; color:rgba(232,223,192,0.92); line-height:1.75; margin-bottom:10px;
         }
 
         .sp-step-note {
-          font-size:0.8rem; color:rgba(232,223,192,0.4); line-height:1.6;
-          padding:9px 12px;
+          font-size:0.85rem; color:rgba(232,223,192,0.65); line-height:1.65;
+          padding:10px 14px;
           background:rgba(0,0,0,0.2);
-          border-radius:8px; border-left:2px solid rgba(201,168,76,0.2);
+          border-radius:8px; border-left:2px solid rgba(201,168,76,0.3);
           margin-bottom:14px;
         }
 
@@ -477,9 +477,9 @@ export default function AlexaSetupPage() {
 
         .sp-nav-btn {
           padding:8px 18px; background:transparent;
-          border:1px solid rgba(201,168,76,0.25); border-radius:8px;
-          color:rgba(201,168,76,0.6); font-family:'Cinzel',serif;
-          font-size:0.65rem; letter-spacing:0.1em; cursor:pointer;
+          border:1px solid rgba(201,168,76,0.3); border-radius:8px;
+          color:rgba(201,168,76,0.8); font-family:'Cinzel',serif;
+          font-size:0.68rem; letter-spacing:0.1em; cursor:pointer;
           transition:all 0.2s;
         }
         .sp-nav-btn:hover { background:rgba(201,168,76,0.08); border-color:rgba(201,168,76,0.4); color:#c9a84c; }
@@ -512,8 +512,8 @@ export default function AlexaSetupPage() {
           background:rgba(0,0,0,0.2); border:1px solid rgba(201,168,76,0.1);
           border-radius:9px; padding:9px 12px;
         }
-        .sp-voice-de { font-family:'Cormorant Garamond',serif; font-size:0.9rem; font-style:italic; color:#e8dfc0; margin-bottom:2px; }
-        .sp-voice-en { font-size:0.72rem; color:rgba(232,223,192,0.4); letter-spacing:0.04em; }
+        .sp-voice-de { font-family:'Cormorant Garamond',serif; font-size:1rem; font-style:italic; color:#f0e8cc; margin-bottom:3px; }
+        .sp-voice-en { font-size:0.78rem; color:rgba(232,223,192,0.65); letter-spacing:0.04em; }
 
         /* ── RIGHT PANEL ── */
         .sp-right { display:flex; flex-direction:column; gap:16px; position:sticky; top:24px; }
@@ -543,9 +543,9 @@ export default function AlexaSetupPage() {
         .sp-checklist { display:flex; flex-direction:column; gap:0; }
 
         .sp-check-phase {
-          font-family:'Cinzel',serif; font-size:0.6rem; letter-spacing:0.18em;
-          text-transform:uppercase; color:rgba(201,168,76,0.45);
-          padding:10px 0 6px; border-bottom:1px solid rgba(201,168,76,0.08);
+          font-family:'Cinzel',serif; font-size:0.62rem; letter-spacing:0.18em;
+          text-transform:uppercase; color:rgba(201,168,76,0.65);
+          padding:10px 0 6px; border-bottom:1px solid rgba(201,168,76,0.1);
           margin-bottom:6px;
         }
         .sp-check-phase:first-child { padding-top:0; }
@@ -553,12 +553,12 @@ export default function AlexaSetupPage() {
         .sp-check-item {
           display:flex; align-items:center; gap:10px;
           padding:5px 0;
-          font-size:0.83rem; color:rgba(232,223,192,0.45);
+          font-size:0.87rem; color:rgba(232,223,192,0.6);
           cursor:pointer; transition:color 0.2s;
         }
-        .sp-check-item:hover { color:rgba(232,223,192,0.7); }
-        .sp-check-item.current { color:rgba(232,223,192,0.85); }
-        .sp-check-item.completed { color:rgba(201,168,76,0.65); }
+        .sp-check-item:hover { color:rgba(232,223,192,0.85); }
+        .sp-check-item.current { color:rgba(232,223,192,0.95); }
+        .sp-check-item.completed { color:rgba(201,168,76,0.8); }
 
         .sp-check-dot {
           width:20px; height:20px; border-radius:50%; flex-shrink:0;
