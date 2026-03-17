@@ -51,6 +51,16 @@ async function handleDiscovery(directive) {
             },
             {
               type: "AlexaInterface",
+              interface: "Alexa.PowerController",
+              version: "3",
+              properties: {
+                supported: [{ name: "powerState" }],
+                proactivelyReported: false,
+                retrievable: false
+              }
+            },
+            {
+              type: "AlexaInterface",
               interface: "Alexa.DoorbellEventSource",
               version: "3",
               proactivelyReported: true
@@ -60,9 +70,7 @@ async function handleDiscovery(directive) {
               interface: "Alexa.EndpointHealth",
               version: "3",
               properties: {
-                supported: [
-                  { name: "connectivity" }
-                ],
+                supported: [{ name: "connectivity" }],
                 proactivelyReported: true,
                 retrievable: true
               }
