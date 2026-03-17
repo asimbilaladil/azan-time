@@ -119,7 +119,7 @@ function buildDoorbellEvent(endpointId, token) {
         endpointId
       },
       payload: {
-        cause: { type: 'PHYSICAL_INTERACTION' },
+        cause: { type: 'APP_INTERACTION' },
         timestamp: new Date().toISOString()
       }
     }
