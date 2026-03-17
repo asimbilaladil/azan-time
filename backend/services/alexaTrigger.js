@@ -13,7 +13,7 @@ async function triggerAlexaDevice(user, prayer) {
     eventToken = await refreshEventToken(user.id);
   }
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 6; attempt++) {
     try {
       const response = await axios.post(ALEXA_API_URL, buildDoorbellEvent(user.device_id, eventToken), {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${eventToken}` },
@@ -28,9 +28,12 @@ async function triggerAlexaDevice(user, prayer) {
       if (status === 401) {
         console.log(`🔄 Got 401, refreshing token...`);
         eventToken = await refreshEventToken(user.id);
+      
+        // IMPORTANT: rebuild event with new token
+        continue;
       } else if (status === 500 && attempt < 3) {
         console.log(`⚠️ Alexa 500, waiting 15s before retry...`);
-        await new Promise(r => setTimeout(r, 15000));
+        await new Promise(r => setTimeout(r, 20000));
       } else {
         throw new Error(`Alexa trigger failed: ${err.message}`);
       }
