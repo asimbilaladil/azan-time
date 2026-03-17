@@ -116,7 +116,6 @@ function buildDoorbellEvent(endpointId, token) {
         payloadVersion: '3'
       },
       endpoint: {
-        scope: { type: 'BearerToken', token },
         endpointId
       },
       payload: {
