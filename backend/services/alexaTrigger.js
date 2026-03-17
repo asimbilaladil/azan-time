@@ -33,23 +33,25 @@ async function triggerAlexaDevice(user, prayer) {
       return true;
     } catch (err) {
       const status = err.response?.status;
-      console.error(`❌ Trigger failed [${status}] attempt ${attempt}/3:`, JSON.stringify(err.response?.data));
-
+    
+      console.error(`❌ Trigger failed [${status}] attempt ${attempt}/6:`,
+        JSON.stringify(err.response?.data)
+      );
+    
       if (status === 401) {
         console.log(`🔄 Got 401, refreshing token...`);
         eventToken = await refreshEventToken(user.id);
-      
-        // IMPORTANT: rebuild event with new token
         continue;
-      } else if (status === 500 && attempt < 3) {
-        console.log(`⚠️ Alexa 500, waiting 15s before retry...`);
-        await new Promise(r => setTimeout(r, 20000));
-      } else {
-        throw new Error(`Alexa trigger failed: ${err.message}`);
       }
-
-      if (attempt === 3) {
-        throw new Error(`Alexa trigger failed after 3 attempts`);
+    
+      if (status === 500 && attempt < 6) {
+        console.log(`⚠️ Alexa 500 — retrying in 20s...`);
+        await new Promise(r => setTimeout(r, 20000));
+        continue;
+      }
+    
+      if (attempt === 6) {
+        throw new Error(`Alexa trigger failed after 6 attempts`);
       }
     }
   }
