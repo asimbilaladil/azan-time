@@ -7,6 +7,16 @@ const ALEXA_API_URL = 'https://api.eu.amazonalexa.com/v3/events';
 async function triggerAlexaDevice(user, prayer) {
   let eventToken = user.event_token;
 
+  // always reload fresh token from DB
+  const [[dbUser]] = await db.query(
+    'SELECT event_token, event_token_expires FROM users WHERE id=?',
+    [user.id]
+  );
+  
+  if (dbUser?.event_token) {
+    eventToken = dbUser.event_token;
+  }
+
   const expiresAt = user.event_token_expires ? new Date(user.event_token_expires) : null;
   if (!eventToken || !expiresAt || expiresAt < new Date(Date.now() + 5 * 60 * 1000)) {
     console.log(`🔄 Event token expired for user ${user.id}, refreshing...`);
