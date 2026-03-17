@@ -47,8 +47,14 @@ async function triggerAlexaDevice(user, prayer) {
       }
     
       if (status === 500 && attempt < 6) {
-        console.log(`⚠️ Alexa 500 — retrying in 20s...`);
-        await new Promise(r => setTimeout(r, 20000));
+        if (attempt === 3) {
+          console.log(`🔄 Mid-retry token refresh for safety...`);
+          eventToken = await refreshEventToken(user.id);
+        }
+      
+        const delay = [2000, 5000, 10000, 15000, 20000][attempt - 1] || 20000;
+        console.log(`⚠️ Alexa 500 — retrying in ${delay / 1000}s...`);
+        await new Promise(r => setTimeout(r, delay));
         continue;
       }
     
