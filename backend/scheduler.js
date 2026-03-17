@@ -113,7 +113,9 @@ async function logTrigger(userId, prayer, success, errorMessage = null) {
 function startScheduler() {
   console.log('⏰ Prayer scheduler started — running every minute');
   cron.schedule('* * * * *', runScheduler);
-  cron.schedule('* * * * *', preWarmTokens);
+  
+  // run prewarm every 5 minutes instead of every minute
+  cron.schedule('*/5 * * * *', preWarmTokens);
   if (process.env.NODE_ENV === 'development') runScheduler();
 }
 
