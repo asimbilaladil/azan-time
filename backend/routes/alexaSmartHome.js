@@ -114,8 +114,9 @@ async function handleAcceptGrant(directive) {
   const eventRefreshToken = response.data.refresh_token;  // ← SAVE THIS
   const expiresIn         = response.data.expires_in;
 
-  const [[user]] = await db.query('SELECT id FROM users WHERE is_active = TRUE LIMIT 1');
-  
+  const [[user]] = await db.query(
+    'SELECT id FROM users WHERE device_id IS NOT NULL LIMIT 1'
+  );  
   await db.query(
     `UPDATE users SET event_token=?, event_refresh_token=?, event_token_expires=DATE_ADD(NOW(), INTERVAL ? SECOND) WHERE id=?`,
     [eventToken, eventRefreshToken, expiresIn, user.id]
