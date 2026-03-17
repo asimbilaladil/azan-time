@@ -17,7 +17,9 @@ async function triggerAlexaDevice(user, prayer) {
     eventToken = dbUser.event_token;
   }
 
-  const expiresAt = user.event_token_expires ? new Date(user.event_token_expires) : null;
+  const expiresAt = dbUser?.event_token_expires
+  ? new Date(dbUser.event_token_expires)
+  : null;
   if (!eventToken || !expiresAt || expiresAt < new Date(Date.now() + 5 * 60 * 1000)) {
     console.log(`🔄 Event token expired for user ${user.id}, refreshing...`);
     eventToken = await refreshEventToken(user.id);
