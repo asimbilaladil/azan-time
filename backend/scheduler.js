@@ -112,10 +112,43 @@ async function logTrigger(userId, prayer, success, errorMessage = null) {
 
 function startScheduler() {
   console.log('⏰ Prayer scheduler started — running every minute');
+
   cron.schedule('* * * * *', runScheduler);
-  
-  // run prewarm every 5 minutes instead of every minute
+
+  // prewarm every 5 minutes
   cron.schedule('*/5 * * * *', preWarmTokens);
+
+  // 🔥 KEEP-ALIVE (ADD THIS)
+  cron.schedule('*/25 * * * *', async () => {
+    console.log("🔄 Keep-alive ping to Alexa...");
+
+    try {
+      const [users] = await db.query(`
+        SELECT id, device_id, event_token, event_token_expires, event_refresh_token
+        FROM users
+        WHERE is_active = TRUE AND device_id IS NOT NULL
+      `);
+
+      for (const user of users) {
+        try {
+          await triggerAlexaDevice(user, "keepalive");
+          console.log(`✅ Keep-alive success for user ${user.id}`);
+        } catch (err) {
+          console.log(`⚠️ Keep-alive failed for user ${user.id}, refreshing token...`);
+
+          try {
+            await refreshEventToken(user.id);
+            console.log(`🔁 Token refreshed for user ${user.id}`);
+          } catch (e) {
+            console.error(`❌ Token refresh failed for user ${user.id}:`, e.message);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("❌ Keep-alive error:", err.message);
+    }
+  });
+
   if (process.env.NODE_ENV === 'development') runScheduler();
 }
 
