@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const db   = require('./database/mysql');
 const { checkPrayerTimeNow, getMosqueTimes } = require('./services/masjidService');
-const { triggerAlexaDevice, refreshEventToken, sendSilentKeepAlive } = require('./services/alexaTrigger');
+const { triggerAlexaDevice, refreshEventToken } = require('./services/alexaTrigger');
 
 let isRunning = false;
 
@@ -14,7 +14,6 @@ async function runScheduler() {
   }
   isRunning = true;
 
-  // Safety: force-release lock after 45 seconds
   const lockTimeout = setTimeout(() => {
     console.error('❌ Scheduler lock timeout — force releasing');
     isRunning = false;
@@ -103,6 +102,9 @@ async function preWarmTokens() {
 }
 
 // ── Proactive token refresh — every 55 min before the 60 min expiry ──────────
+// This keeps the token always fresh without any keep-alive pings to Alexa.
+// Alexa's proactive event context stays alive as long as we send valid events
+// (prayer triggers) regularly — no separate keep-alive needed.
 async function proactiveTokenRefresh() {
   try {
     const [users] = await db.query(`
@@ -145,39 +147,9 @@ function startScheduler() {
   // Pre-warm tokens 30 min before prayer — every 5 minutes
   cron.schedule('*/5 * * * *', preWarmTokens);
 
-  // Proactive token refresh — every 55 minutes (token expires every 60 min)
+  // Proactive token refresh — every 55 minutes
+  // Keeps token always valid without any Alexa keep-alive pings
   cron.schedule('*/55 * * * *', proactiveTokenRefresh);
-
-  // Silent keep-alive — every 10 minutes
-  // Sends a ChangeReport on EndpointHealth — completely silent, no Alexa announcement
-  // Just tells Alexa the device is still online to keep proactive event context alive
-  cron.schedule('*/10 * * * *', async () => {
-    console.log("🔄 Silent keep-alive ping...");
-
-    try {
-      const [users] = await db.query(`
-        SELECT id, device_id, event_token, event_token_expires, event_refresh_token
-        FROM users
-        WHERE is_active = TRUE AND device_id IS NOT NULL
-      `);
-
-      for (const user of users) {
-        try {
-          await sendSilentKeepAlive(user);
-        } catch (err) {
-          console.warn(`⚠️ Keep-alive failed for user ${user.id}, refreshing token...`);
-          try {
-            await refreshEventToken(user.id);
-            console.log(`🔁 Token refreshed after keep-alive failure for user ${user.id}`);
-          } catch (e) {
-            console.error(`❌ Token refresh failed for user ${user.id}:`, e.message);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("❌ Keep-alive error:", err.message);
-    }
-  });
 
   if (process.env.NODE_ENV === 'development') runScheduler();
 }
