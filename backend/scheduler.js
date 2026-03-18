@@ -5,6 +5,7 @@ const { triggerAlexaDevice, refreshEventToken } = require('./services/alexaTrigg
 
 let isRunning = false;
 
+// ── Prayer scheduler — runs every minute ─────────────────────────────────────
 async function runScheduler() {
   console.log("⏱ Scheduler tick:", new Date().toISOString());
   if (isRunning) {
@@ -42,6 +43,7 @@ async function runScheduler() {
         FROM users
         WHERE mosque_guid = ? AND is_active = TRUE AND device_id IS NOT NULL
       `, [mosque_guid]);
+
       console.log(`👥 Users with device: ${users.length}`);
       console.log(`🕌 ${prayer.toUpperCase()} — mosque ${mosque_guid} (${users.length} users)`);
 
@@ -61,6 +63,7 @@ async function runScheduler() {
   }
 }
 
+// ── Pre-warm tokens 30 min before each prayer ─────────────────────────────────
 async function preWarmTokens() {
   try {
     const [users] = await db.query(`
@@ -73,15 +76,15 @@ async function preWarmTokens() {
     for (const user of users) {
       const tz = user.timezone || 'UTC';
       const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
-      const nowMin = nowLocal.getHours() * 60 + nowLocal.getMinutes();
+      const nowMin   = nowLocal.getHours() * 60 + nowLocal.getMinutes();
 
       const { times } = await getMosqueTimes(user.mosque_guid);
 
       for (const prayer of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
         if (!times[prayer]) continue;
-        const [h, m] = times[prayer].split(':').map(Number);
+        const [h, m]   = times[prayer].split(':').map(Number);
         const prayerMin = h * 60 + m;
-        const diff = prayerMin - nowMin;
+        const diff      = prayerMin - nowMin;
 
         if (diff >= 28 && diff <= 32) {
           console.log(`🔥 Pre-warming token for ${prayer} in ${diff}min (user ${user.id})`);
@@ -99,6 +102,28 @@ async function preWarmTokens() {
   }
 }
 
+// ── Proactive token refresh — every 55 min, before the 60 min expiry ─────────
+async function proactiveTokenRefresh() {
+  try {
+    const [users] = await db.query(`
+      SELECT id FROM users
+      WHERE is_active = TRUE AND device_id IS NOT NULL
+    `);
+
+    for (const user of users) {
+      try {
+        await refreshEventToken(user.id);
+        console.log(`✅ Proactive token refresh for user ${user.id}`);
+      } catch (e) {
+        console.error(`❌ Proactive refresh failed for user ${user.id}:`, e.message);
+      }
+    }
+  } catch (err) {
+    console.error('❌ Proactive refresh cron error:', err.message);
+  }
+}
+
+// ── Trigger log ───────────────────────────────────────────────────────────────
 async function logTrigger(userId, prayer, success, errorMessage = null) {
   try {
     await db.query(
@@ -110,16 +135,24 @@ async function logTrigger(userId, prayer, success, errorMessage = null) {
   }
 }
 
+// ── Start all cron jobs ───────────────────────────────────────────────────────
 function startScheduler() {
   console.log('⏰ Prayer scheduler started — running every minute');
 
+  // Prayer detection — every minute
   cron.schedule('* * * * *', runScheduler);
 
-  // prewarm every 5 minutes
+  // Pre-warm tokens 30 min before prayer — every 5 minutes
   cron.schedule('*/5 * * * *', preWarmTokens);
 
-  // 🔥 KEEP-ALIVE (ADD THIS)
-  cron.schedule('*/25 * * * *', async () => {
+  // Proactive token refresh — every 55 minutes (token expires every 60 min)
+  // Runs before expiry to avoid race conditions at the exact expiry minute
+  cron.schedule('*/55 * * * *', proactiveTokenRefresh);
+
+  // Keep-alive ping — every 10 minutes using the PING device (azan-doorbell-X-ping)
+  // This device has NO Alexa routine attached so it keeps context alive
+  // without accidentally triggering Azan playback
+  cron.schedule('*/10 * * * *', async () => {
     console.log("🔄 Keep-alive ping to Alexa...");
 
     try {
@@ -131,14 +164,19 @@ function startScheduler() {
 
       for (const user of users) {
         try {
-          await triggerAlexaDevice(user, "keepalive");
+          // Use the ping device — no routine attached, so Alexa stays alive
+          // without firing the Azan routine
+          await triggerAlexaDevice(
+            { ...user, device_id: user.device_id + '-ping' },
+            'keepalive'
+          );
           console.log(`✅ Keep-alive success for user ${user.id}`);
         } catch (err) {
-          console.log(`⚠️ Keep-alive failed for user ${user.id}, refreshing token...`);
-
+          console.warn(`⚠️ Keep-alive failed for user ${user.id}: ${err.message}`);
+          // Attempt token refresh on keep-alive failure as a safety net
           try {
             await refreshEventToken(user.id);
-            console.log(`🔁 Token refreshed for user ${user.id}`);
+            console.log(`🔁 Token refreshed after keep-alive failure for user ${user.id}`);
           } catch (e) {
             console.error(`❌ Token refresh failed for user ${user.id}:`, e.message);
           }
