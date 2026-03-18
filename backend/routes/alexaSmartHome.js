@@ -20,55 +20,16 @@ router.post('/', async (req, res) => {
   }
 });
 
-// ── Shared capability set ─────────────────────────────────────────────────────
-function doorbellCapabilities() {
-  return [
-    {
-      type: 'AlexaInterface',
-      interface: 'Alexa',
-      version: '3'
-    },
-    {
-      type: 'AlexaInterface',
-      interface: 'Alexa.PowerController',
-      version: '3',
-      properties: {
-        supported: [{ name: 'powerState' }],
-        proactivelyReported: false,
-        retrievable: false
-      }
-    },
-    {
-      type: 'AlexaInterface',
-      interface: 'Alexa.DoorbellEventSource',
-      version: '3',
-      proactivelyReported: true
-    },
-    {
-      type: 'AlexaInterface',
-      interface: 'Alexa.EndpointHealth',
-      version: '3',
-      properties: {
-        supported: [{ name: 'connectivity' }],
-        proactivelyReported: true,
-        retrievable: true
-      }
-    }
-  ];
-}
-
-// ── Discovery ─────────────────────────────────────────────────────────────────
-// Returns TWO endpoints:
-//   1. "Azan"      — real doorbell, attach your Alexa routine to this one
-//   2. "Azan Ping" — keep-alive only, do NOT attach any routine to this one
+// ── Discovery — single doorbell device ───────────────────────────────────────
+// Keep-alive now uses a silent ChangeReport instead of DoorbellPress,
+// so we only need one device. Attach your Alexa routine to "Azan".
 async function handleDiscovery(directive) {
   const [[user]] = await db.query('SELECT id FROM users WHERE is_active = TRUE LIMIT 1');
   const userId     = user?.id || 1;
   const endpointId = `azan-doorbell-${userId}`;
-  const pingId     = `azan-doorbell-${userId}-ping`;
 
   await db.query('UPDATE users SET device_id = ? WHERE id = ?', [endpointId, userId]);
-  console.log(`✅ Device registered: ${endpointId} (prayer) + ${pingId} (keepalive) for user ${userId}`);
+  console.log(`✅ Device registered: ${endpointId} for user ${userId}`);
 
   return {
     event: {
@@ -80,25 +41,46 @@ async function handleDiscovery(directive) {
       },
       payload: {
         endpoints: [
-          // ── Real prayer doorbell — create your Alexa routine for THIS one ──
           {
             endpointId,
-            manufacturerName:    'Azan Time',
-            friendlyName:        'Azan',
-            description:         'Azan prayer announcement — attach your Alexa routine here',
-            displayCategories:   ['DOORBELL'],
-            cookie:              {},
-            capabilities:        doorbellCapabilities()
-          },
-          // ── Keep-alive ping device — DO NOT attach any routine to this ──
-          {
-            endpointId:          pingId,
-            manufacturerName:    'Azan Time',
-            friendlyName:        'Azan Ping',
-            description:         'Internal keep-alive device — do not attach any routine',
-            displayCategories:   ['DOORBELL'],
-            cookie:              {},
-            capabilities:        doorbellCapabilities()
+            manufacturerName:  'Azan Time',
+            friendlyName:      'Azan',
+            description:       'Azan prayer announcement doorbell',
+            displayCategories: ['DOORBELL'],
+            cookie:            {},
+            capabilities: [
+              {
+                type:      'AlexaInterface',
+                interface: 'Alexa',
+                version:   '3'
+              },
+              {
+                type:      'AlexaInterface',
+                interface: 'Alexa.PowerController',
+                version:   '3',
+                properties: {
+                  supported:           [{ name: 'powerState' }],
+                  proactivelyReported: false,
+                  retrievable:         false
+                }
+              },
+              {
+                type:                'AlexaInterface',
+                interface:           'Alexa.DoorbellEventSource',
+                version:             '3',
+                proactivelyReported: true
+              },
+              {
+                type:      'AlexaInterface',
+                interface: 'Alexa.EndpointHealth',
+                version:   '3',
+                properties: {
+                  supported:           [{ name: 'connectivity' }],
+                  proactivelyReported: true,
+                  retrievable:         true
+                }
+              }
+            ]
           }
         ]
       }
@@ -125,10 +107,10 @@ async function handlePowerController(directive) {
     },
     context: {
       properties: [{
-        namespace:                'Alexa.PowerController',
-        name:                     'powerState',
-        value:                    dirName === 'TurnOn' ? 'ON' : 'OFF',
-        timeOfSample:             new Date().toISOString(),
+        namespace:                 'Alexa.PowerController',
+        name:                      'powerState',
+        value:                     dirName === 'TurnOn' ? 'ON' : 'OFF',
+        timeOfSample:              new Date().toISOString(),
         uncertaintyInMilliseconds: 200
       }]
     }
@@ -150,10 +132,10 @@ function handleReportState(directive) {
     },
     context: {
       properties: [{
-        namespace:                'Alexa.PowerController',
-        name:                     'powerState',
-        value:                    'OFF',
-        timeOfSample:             new Date().toISOString(),
+        namespace:                 'Alexa.PowerController',
+        name:                      'powerState',
+        value:                     'OFF',
+        timeOfSample:              new Date().toISOString(),
         uncertaintyInMilliseconds: 200
       }]
     }
