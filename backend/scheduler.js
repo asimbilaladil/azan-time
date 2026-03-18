@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const db   = require('./database/mysql');
 const { checkPrayerTimeNow, getMosqueTimes } = require('./services/masjidService');
-const { triggerAlexaDevice, refreshEventToken } = require('./services/alexaTrigger');
+const { triggerAlexaDevice, refreshEventToken, sendSilentKeepAlive } = require('./services/alexaTrigger');
 
 let isRunning = false;
 
@@ -74,7 +74,7 @@ async function preWarmTokens() {
     `);
 
     for (const user of users) {
-      const tz = user.timezone || 'UTC';
+      const tz       = user.timezone || 'UTC';
       const nowLocal = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
       const nowMin   = nowLocal.getHours() * 60 + nowLocal.getMinutes();
 
@@ -82,7 +82,7 @@ async function preWarmTokens() {
 
       for (const prayer of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']) {
         if (!times[prayer]) continue;
-        const [h, m]   = times[prayer].split(':').map(Number);
+        const [h, m]    = times[prayer].split(':').map(Number);
         const prayerMin = h * 60 + m;
         const diff      = prayerMin - nowMin;
 
@@ -102,7 +102,7 @@ async function preWarmTokens() {
   }
 }
 
-// ── Proactive token refresh — every 55 min, before the 60 min expiry ─────────
+// ── Proactive token refresh — every 55 min before the 60 min expiry ──────────
 async function proactiveTokenRefresh() {
   try {
     const [users] = await db.query(`
@@ -146,14 +146,13 @@ function startScheduler() {
   cron.schedule('*/5 * * * *', preWarmTokens);
 
   // Proactive token refresh — every 55 minutes (token expires every 60 min)
-  // Runs before expiry to avoid race conditions at the exact expiry minute
   cron.schedule('*/55 * * * *', proactiveTokenRefresh);
 
-  // Keep-alive ping — every 10 minutes using the PING device (azan-doorbell-X-ping)
-  // This device has NO Alexa routine attached so it keeps context alive
-  // without accidentally triggering Azan playback
+  // Silent keep-alive — every 10 minutes
+  // Sends a ChangeReport on EndpointHealth — completely silent, no Alexa announcement
+  // Just tells Alexa the device is still online to keep proactive event context alive
   cron.schedule('*/10 * * * *', async () => {
-    console.log("🔄 Keep-alive ping to Alexa...");
+    console.log("🔄 Silent keep-alive ping...");
 
     try {
       const [users] = await db.query(`
@@ -164,16 +163,9 @@ function startScheduler() {
 
       for (const user of users) {
         try {
-          // Use the ping device — no routine attached, so Alexa stays alive
-          // without firing the Azan routine
-          await triggerAlexaDevice(
-            { ...user, device_id: user.device_id + '-ping' },
-            'keepalive'
-          );
-          console.log(`✅ Keep-alive success for user ${user.id}`);
+          await sendSilentKeepAlive(user);
         } catch (err) {
-          console.warn(`⚠️ Keep-alive failed for user ${user.id}: ${err.message}`);
-          // Attempt token refresh on keep-alive failure as a safety net
+          console.warn(`⚠️ Keep-alive failed for user ${user.id}, refreshing token...`);
           try {
             await refreshEventToken(user.id);
             console.log(`🔁 Token refreshed after keep-alive failure for user ${user.id}`);
