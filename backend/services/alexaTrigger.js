@@ -4,60 +4,74 @@ const db     = require('../database/mysql');
 
 const ALEXA_API_URL = 'https://api.eu.amazonalexa.com/v3/events';
 
+// ── Prayer doorbell trigger ───────────────────────────────────────────────────
 async function triggerAlexaDevice(user, prayer) {
   let eventToken = user.event_token;
 
-  // always reload fresh token from DB
+  // Always reload fresh token from DB
   const [[dbUser]] = await db.query(
-    'SELECT event_token, event_token_expires FROM users WHERE id=?',
+    'SELECT event_token, event_token_expires FROM users WHERE id = ?',
     [user.id]
   );
-  
+
   if (dbUser?.event_token) {
     eventToken = dbUser.event_token;
   }
 
   const expiresAt = dbUser?.event_token_expires
-  ? new Date(dbUser.event_token_expires)
-  : null;
+    ? new Date(dbUser.event_token_expires)
+    : null;
+
   if (!eventToken || !expiresAt || expiresAt < new Date(Date.now() + 5 * 60 * 1000)) {
     console.log(`🔄 Event token expired for user ${user.id}, refreshing...`);
     eventToken = await refreshEventToken(user.id);
   }
 
+  let consecutive401 = 0;
+
   for (let attempt = 1; attempt <= 6; attempt++) {
     try {
-      const response = await axios.post(ALEXA_API_URL, buildDoorbellEvent(user.device_id, eventToken), {
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${eventToken}` },
-        timeout: 10000
-      });
+      const response = await axios.post(
+        ALEXA_API_URL,
+        buildDoorbellEvent(user.device_id, eventToken),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${eventToken}`
+          },
+          timeout: 10000
+        }
+      );
       console.log(`✅ Doorbell triggered ${user.device_id} (${prayer}) — ${response.status}`);
       return true;
     } catch (err) {
       const status = err.response?.status;
-    
-      console.error(`❌ Trigger failed [${status}] attempt ${attempt}/6:`,
+
+      console.error(
+        `❌ Trigger failed [${status}] attempt ${attempt}/6:`,
         JSON.stringify(err.response?.data)
       );
-    
+
       if (status === 401) {
+        if (++consecutive401 >= 2) {
+          throw new Error('Two consecutive 401s — check ALEXA_EVENT_CLIENT_ID/SECRET');
+        }
         console.log(`🔄 Got 401, refreshing token...`);
         eventToken = await refreshEventToken(user.id);
         continue;
       }
-    
+
       if (status === 500 && attempt < 6) {
         if (attempt === 3) {
           console.log(`🔄 Mid-retry token refresh for safety...`);
           eventToken = await refreshEventToken(user.id);
         }
-      
         const delay = [2000, 5000, 10000, 15000, 20000][attempt - 1] || 20000;
         console.log(`⚠️ Alexa 500 — retrying in ${delay / 1000}s...`);
         await new Promise(r => setTimeout(r, delay));
         continue;
       }
-    
+
       if (attempt === 6) {
         throw new Error(`Alexa trigger failed after 6 attempts`);
       }
@@ -65,8 +79,50 @@ async function triggerAlexaDevice(user, prayer) {
   }
 }
 
+// ── Silent keep-alive — sends a ChangeReport on EndpointHealth ───────────────
+// Uses the real doorbell device but sends a connectivity status update instead
+// of a DoorbellPress. Alexa makes no announcement — it just knows the device
+// is still online, which keeps the proactive event context alive.
+async function sendSilentKeepAlive(user) {
+  try {
+    const [[dbUser]] = await db.query(
+      'SELECT event_token, event_token_expires FROM users WHERE id = ?',
+      [user.id]
+    );
 
+    const token = dbUser?.event_token;
+    if (!token) {
+      console.warn(`⚠️ No event_token for user ${user.id}, skipping keep-alive`);
+      return;
+    }
 
+    const expiresAt = dbUser?.event_token_expires
+      ? new Date(dbUser.event_token_expires)
+      : null;
+
+    if (!expiresAt || expiresAt < new Date(Date.now() + 5 * 60 * 1000)) {
+      console.log(`🔄 Token near expiry for user ${user.id}, refreshing before keep-alive...`);
+      await refreshEventToken(user.id);
+      return;
+    }
+
+    await axios.post(ALEXA_API_URL, buildChangeReport(user.device_id, token), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      timeout: 10000
+    });
+
+    console.log(`✅ Silent keep-alive sent for user ${user.id}`);
+  } catch (err) {
+    const status = err.response?.status;
+    console.warn(`⚠️ Silent keep-alive failed for user ${user.id} [${status}]:`, err.response?.data?.payload?.code || err.message);
+    throw err;
+  }
+}
+
+// ── Token refresh ─────────────────────────────────────────────────────────────
 async function refreshEventToken(userId) {
   const [[user]] = await db.query(
     'SELECT event_refresh_token FROM users WHERE id = ?', [userId]
@@ -80,15 +136,15 @@ async function refreshEventToken(userId) {
 
   const response = await axios.post(
     'https://api.amazon.com/auth/o2/token',
-      new URLSearchParams({
+    new URLSearchParams({
       grant_type:    'refresh_token',
       refresh_token: user.event_refresh_token,
       client_id:     process.env.ALEXA_EVENT_CLIENT_ID,
       client_secret: process.env.ALEXA_EVENT_CLIENT_SECRET,
     }),
-    { 
+    {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      timeout: 8000  // ← ADD THIS
+      timeout: 8000
     }
   );
 
@@ -97,7 +153,10 @@ async function refreshEventToken(userId) {
   const expiresIn       = response.data.expires_in;
 
   await db.query(
-    `UPDATE users SET event_token=?, event_refresh_token=?, event_token_expires=DATE_ADD(NOW(), INTERVAL ? SECOND) WHERE id=?`,
+    `UPDATE users
+     SET event_token = ?, event_refresh_token = ?,
+         event_token_expires = DATE_ADD(NOW(), INTERVAL ? SECOND)
+     WHERE id = ?`,
     [newToken, newRefreshToken, expiresIn, userId]
   );
 
@@ -105,33 +164,68 @@ async function refreshEventToken(userId) {
   return newToken;
 }
 
+// ── Payload builders ──────────────────────────────────────────────────────────
 function buildDoorbellEvent(endpointId, token) {
   return {
     context: {
       properties: [{
-        namespace: 'Alexa.EndpointHealth',
-        name: 'connectivity',
-        value: { value: 'OK' },
-        timeOfSample: new Date().toISOString(),
+        namespace:                'Alexa.EndpointHealth',
+        name:                     'connectivity',
+        value:                    { value: 'OK' },
+        timeOfSample:             new Date().toISOString(),
         uncertaintyInMilliseconds: 0
       }]
     },
     event: {
       header: {
-        messageId: crypto.randomUUID(),
-        namespace: 'Alexa.DoorbellEventSource',
-        name: 'DoorbellPress',
+        messageId:      crypto.randomUUID(),
+        namespace:      'Alexa.DoorbellEventSource',
+        name:           'DoorbellPress',
         payloadVersion: '3'
       },
-      endpoint: {
-        endpointId
-      },
+      endpoint: { endpointId },
       payload: {
-        cause: { type: 'APP_INTERACTION' },
+        cause:     { type: 'APP_INTERACTION' },
         timestamp: new Date().toISOString()
       }
     }
   };
 }
 
-module.exports = { triggerAlexaDevice, refreshEventToken };
+function buildChangeReport(endpointId, token) {
+  const now = new Date().toISOString();
+  return {
+    context: {
+      properties: [{
+        namespace:                'Alexa.EndpointHealth',
+        name:                     'connectivity',
+        value:                    { value: 'OK' },
+        timeOfSample:             now,
+        uncertaintyInMilliseconds: 0
+      }]
+    },
+    event: {
+      header: {
+        messageId:      crypto.randomUUID(),
+        namespace:      'Alexa.ChangeReport',
+        name:           'ChangeReport',
+        payloadVersion: '3'
+      },
+      endpoint: { endpointId },
+      payload: {
+        change: {
+          cause: { type: 'APP_INTERACTION' },
+          properties: [{
+            namespace:                'Alexa.EndpointHealth',
+            name:                     'connectivity',
+            value:                    { value: 'OK' },
+            timeOfSample:             now,
+            uncertaintyInMilliseconds: 0
+          }]
+        }
+      }
+    }
+  };
+}
+
+module.exports = { triggerAlexaDevice, refreshEventToken, sendSilentKeepAlive };
