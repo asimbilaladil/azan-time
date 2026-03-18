@@ -28,15 +28,26 @@ router.post('/', async (req, res) => {
       let audioUrl = AUDIO_URLS.dhuhr; // fallback
     
       try {
-        const [[userRow]] = await db.query(
-          `SELECT mosque_guid FROM users WHERE is_active = TRUE AND device_id IS NOT NULL LIMIT 1`
-        );
-        if (userRow?.mosque_guid) {
-          const prayer = await checkPrayerTimeNow(userRow.mosque_guid);
-          if (prayer && AUDIO_URLS[prayer]) {
-            audioUrl = AUDIO_URLS[prayer];
-            console.log(`🎵 LaunchRequest: playing ${prayer}`);
+        const launchToken = body?.context?.System?.user?.accessToken;
+        if (launchToken) {
+          try {
+            const launchUser = await getUserByToken(launchToken);
+            if (launchUser?.mosque_guid) {
+              const prayer = await checkPrayerTimeNow(launchUser.mosque_guid);
+              if (prayer && AUDIO_URLS[prayer]) {
+                audioUrl = AUDIO_URLS[prayer];
+                console.log(`🎵 LaunchRequest: playing ${prayer} for user ${launchUser.id}`);
+              } else {
+                console.log(`⚠️ LaunchRequest: no prayer matched, using fallback ${audioUrl}`);
+              }
+            } else {
+              console.log(`⚠️ LaunchRequest: no mosque_guid for user, using fallback`);
+            }
+          } catch (e) {
+            console.error('LaunchRequest user lookup failed:', e.message);
           }
+        } else {
+          console.log(`⚠️ LaunchRequest: no accessToken in request`);
         }
       } catch (e) {
         console.error('LaunchRequest prayer detect failed:', e.message);
