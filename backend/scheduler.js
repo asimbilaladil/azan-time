@@ -1,7 +1,10 @@
 const cron = require('node-cron');
 const db   = require('./database/mysql');
 const { checkPrayerTimeNow, getMosqueTimes } = require('./services/masjidService');
-const { triggerAlexaDevice, refreshEventToken, refreshEndpointBinding } = require('./services/alexaTrigger');
+const { triggerAzan, isReady } = require('./services/alexaDirectService');
+
+// Keep old trigger as fallback
+const { triggerAlexaDevice, refreshEventToken } = require('./services/alexaTrigger');
 
 let isRunning = false;
 
@@ -38,7 +41,8 @@ async function runScheduler() {
 
       const [users] = await db.query(`
         SELECT id, device_id, access_token, refresh_token, token_expires_at,
-               event_token, event_token_expires, event_refresh_token
+               event_token, event_token_expires, event_refresh_token,
+               alexa_device_serial
         FROM users
         WHERE mosque_guid = ? AND is_active = TRUE AND device_id IS NOT NULL
       `, [mosque_guid]);
@@ -46,13 +50,36 @@ async function runScheduler() {
       console.log(`👥 Users with device: ${users.length}`);
       console.log(`🕌 ${prayer.toUpperCase()} — mosque ${mosque_guid} (${users.length} users)`);
 
-      const triggers = users.map(user =>
-        triggerAlexaDevice(user, prayer)
-          .then(() => logTrigger(user.id, prayer, true))
-          .catch(err => logTrigger(user.id, prayer, false, err.message))
-      );
+      for (const user of users) {
+        try {
+          // PRIMARY: Use alexa-remote2 direct command
+          if (isReady() && user.alexa_device_serial) {
+            await triggerAzan(user.alexa_device_serial, prayer);
+            await logTrigger(user.id, prayer, true, null, 'direct');
+            console.log(`✅ Direct trigger success for user ${user.id}`);
+          }
+          // FALLBACK: Use old DoorbellPress method
+          else {
+            console.log(`⚠️ Alexa Remote not ready or no device serial — falling back to DoorbellPress`);
+            await triggerAlexaDevice(user, prayer);
+            await logTrigger(user.id, prayer, true, null, 'doorbell');
+          }
+        } catch (err) {
+          console.error(`❌ Trigger failed for user ${user.id}:`, err.message);
+          await logTrigger(user.id, prayer, false, err.message);
 
-      await Promise.allSettled(triggers);
+          // If direct method failed, try doorbell as fallback
+          if (isReady() && user.alexa_device_serial) {
+            try {
+              console.log(`🔄 Trying DoorbellPress fallback for user ${user.id}...`);
+              await triggerAlexaDevice(user, prayer);
+              await logTrigger(user.id, prayer, true, null, 'doorbell-fallback');
+            } catch (fallbackErr) {
+              console.error(`❌ Fallback also failed for user ${user.id}:`, fallbackErr.message);
+            }
+          }
+        }
+      }
     }
   } catch (err) {
     console.error('❌ Scheduler error:', err.message);
@@ -62,7 +89,7 @@ async function runScheduler() {
   }
 }
 
-// ── Pre-warm tokens 30 min before each prayer ─────────────────────────────────
+// ── Pre-warm tokens (for DoorbellPress fallback) ──────────────────────────────
 async function preWarmTokens() {
   try {
     const [users] = await db.query(`
@@ -101,7 +128,7 @@ async function preWarmTokens() {
   }
 }
 
-// ── Proactive token refresh — every 55 min ───────────────────────────────────
+// ── Proactive token refresh (for DoorbellPress fallback) ─────────────────────
 async function proactiveTokenRefresh() {
   try {
     const [users] = await db.query(`
@@ -122,38 +149,12 @@ async function proactiveTokenRefresh() {
   }
 }
 
-// ── Periodic endpoint refresh — every 4 hours ────────────────────────────────
-// Sends AddOrUpdateReport to Alexa to keep the doorbell endpoint binding fresh.
-// This prevents the 204 decay where Alexa forgets the endpoint-routine link.
-// Unlike ChangeReport (which returns 400 for doorbell devices), AddOrUpdateReport
-// is a valid proactive discovery event that Alexa explicitly supports.
-async function periodicEndpointRefresh() {
-  try {
-    const [users] = await db.query(`
-      SELECT id, device_id, event_token, event_token_expires, event_refresh_token
-      FROM users
-      WHERE is_active = TRUE AND device_id IS NOT NULL
-    `);
-
-    for (const user of users) {
-      try {
-        await refreshEndpointBinding(user);
-        console.log(`✅ Periodic endpoint refresh for user ${user.id}`);
-      } catch (e) {
-        console.error(`❌ Endpoint refresh failed for user ${user.id}:`, e.response?.data || e.message);
-      }
-    }
-  } catch (err) {
-    console.error('❌ Periodic endpoint refresh cron error:', err.message);
-  }
-}
-
 // ── Trigger log ───────────────────────────────────────────────────────────────
-async function logTrigger(userId, prayer, success, errorMessage = null) {
+async function logTrigger(userId, prayer, success, errorMessage = null, method = 'unknown') {
   try {
     await db.query(
       'INSERT INTO trigger_log (user_id, prayer, success, error_message) VALUES (?, ?, ?, ?)',
-      [userId, prayer, success, errorMessage]
+      [userId, prayer, success, errorMessage ? `[${method}] ${errorMessage}` : `[${method}] ok`]
     );
   } catch (e) {
     console.error('Failed to write trigger_log:', e.message);
@@ -164,20 +165,9 @@ async function logTrigger(userId, prayer, success, errorMessage = null) {
 function startScheduler() {
   console.log('⏰ Prayer scheduler started — running every minute');
 
-  // 1. Prayer detection — every minute
   cron.schedule('* * * * *', runScheduler);
-
-  // 2. Pre-warm tokens 30 min before prayer — every 5 minutes
   cron.schedule('*/5 * * * *', preWarmTokens);
-
-  // 3. Proactive token refresh — every 55 minutes
   cron.schedule('*/55 * * * *', proactiveTokenRefresh);
-
-  // 4. Endpoint binding refresh — every 4 hours
-  // Sends AddOrUpdateReport to keep the doorbell endpoint alive with Alexa.
-  // This replaces the old ChangeReport keep-alive (which was invalid for
-  // doorbell devices and caused 400 INVALID_REQUEST_EXCEPTION).
-  cron.schedule('0 */4 * * *', periodicEndpointRefresh);
 
   if (process.env.NODE_ENV === 'development') runScheduler();
 }
