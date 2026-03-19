@@ -31,9 +31,10 @@ async function triggerAlexaDevice(user, prayer) {
 
   for (let attempt = 1; attempt <= 6; attempt++) {
     try {
+      const payload = buildDoorbellEvent(user.device_id, eventToken);
       const response = await axios.post(
         ALEXA_API_URL,
-        buildDoorbellEvent(user.device_id, eventToken),
+        payload,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -165,6 +166,11 @@ async function refreshEventToken(userId) {
 }
 
 // ── Payload builders ──────────────────────────────────────────────────────────
+
+// FIX: Added scope.BearerToken inside event.endpoint — required by Alexa docs
+// See: https://developer.amazon.com/en-US/docs/alexa/device-apis/alexa-doorbelleventsource.html
+// Without this, Alexa returns 202 (or 204) but cannot route the event to the
+// correct customer, so the routine never fires.
 function buildDoorbellEvent(endpointId, token) {
   return {
     context: {
@@ -183,9 +189,15 @@ function buildDoorbellEvent(endpointId, token) {
         name:           'DoorbellPress',
         payloadVersion: '3'
       },
-      endpoint: { endpointId },
+      endpoint: {
+        scope: {
+          type:  'BearerToken',
+          token: token
+        },
+        endpointId
+      },
       payload: {
-        cause:     { type: 'APP_INTERACTION' },
+        cause:     { type: 'PHYSICAL_INTERACTION' },
         timestamp: new Date().toISOString()
       }
     }
@@ -211,7 +223,13 @@ function buildChangeReport(endpointId, token) {
         name:           'ChangeReport',
         payloadVersion: '3'
       },
-      endpoint: { endpointId },
+      endpoint: {
+        scope: {
+          type:  'BearerToken',
+          token: token
+        },
+        endpointId
+      },
       payload: {
         change: {
           cause: { type: 'APP_INTERACTION' },
