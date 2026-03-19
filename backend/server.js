@@ -92,6 +92,7 @@ app.use('/api/cities',       require('./routes/cities'));
 app.use('/alexa/smart-home', require('./routes/alexaSmartHome'));
 app.use('/alexa/custom',     require('./routes/alexaCustom'));
 app.use('/api/test', require('./routes/test'));
+app.use('/api/alexa-direct', require('./routes/alexaDirect'));
 
 // ── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', ts: new Date(), env: process.env.NODE_ENV }));
@@ -112,11 +113,15 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT} [${process.env.NODE_ENV}]`);
 
-  // Start prayer scheduler (T06)
+  // Start prayer scheduler
   if (process.env.NODE_ENV !== 'test') {
     const { startScheduler } = require('./scheduler');
     startScheduler();
   }
+
+  // Initialize alexa-remote2 direct control
+  const { initAlexa } = require('./services/alexaDirectService');
+  initAlexa().catch(err => console.error('⚠️ Alexa Remote init:', err.message));
 });
 
 module.exports = app;
