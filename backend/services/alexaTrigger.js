@@ -4,7 +4,7 @@ const db     = require('../database/mysql');
 
 const ALEXA_API_URL = 'https://api.eu.amazonalexa.com/v3/events';
 
-// ── Prayer doorbell trigger ───────────────────────────────────────────────────
+// ── Prayer doorbell trigger (with self-healing) ──────────────────────────────
 async function triggerAlexaDevice(user, prayer) {
   let eventToken = user.event_token;
 
@@ -43,7 +43,25 @@ async function triggerAlexaDevice(user, prayer) {
           timeout: 10000
         }
       );
-      console.log(`✅ Doorbell triggered ${user.device_id} (${prayer}) — ${response.status}`);
+
+      const status = response.status;
+      console.log(`✅ Doorbell triggered ${user.device_id} (${prayer}) — ${status}`);
+
+      // SELF-HEALING: if we get 204 instead of 202, the endpoint binding
+      // has decayed. Send AddOrUpdateReport to re-register the endpoint,
+      // then retry the DoorbellPress.
+      if (status === 204 && attempt <= 2) {
+        console.log(`⚠️ Got 204 — endpoint binding stale. Sending AddOrUpdateReport to refresh...`);
+        try {
+          await sendAddOrUpdateReport(user.device_id, eventToken);
+          console.log(`✅ AddOrUpdateReport sent. Retrying DoorbellPress in 3s...`);
+          await new Promise(r => setTimeout(r, 3000));
+          continue; // retry the DoorbellPress
+        } catch (healErr) {
+          console.error(`❌ AddOrUpdateReport failed:`, healErr.response?.data || healErr.message);
+        }
+      }
+
       return true;
     } catch (err) {
       const status = err.response?.status;
@@ -80,16 +98,115 @@ async function triggerAlexaDevice(user, prayer) {
   }
 }
 
-// ── KEEP-ALIVE REMOVED ───────────────────────────────────────────────────────
-// The silent keep-alive via ChangeReport does NOT work for doorbell devices.
-// Alexa docs: "The Alexa.DoorbellEventSource interface doesn't define any
-// proactively reportable properties." — so ChangeReport returns 400
-// INVALID_REQUEST_EXCEPTION. This function is kept as a no-op so any existing
-// callers don't crash, but it does nothing.
+// ── Proactive Discovery: AddOrUpdateReport ────────────────────────────────────
+// Sends a proactive discovery event to refresh the doorbell endpoint binding
+// with Alexa. This tells Alexa "this device still exists for this user" and
+// keeps the routine association alive.
+// See: https://developer.amazon.com/en-US/docs/alexa/device-apis/alexa-discovery.html
+async function sendAddOrUpdateReport(endpointId, token) {
+  const payload = {
+    event: {
+      header: {
+        namespace:      'Alexa.Discovery',
+        name:           'AddOrUpdateReport',
+        payloadVersion: '3',
+        messageId:      crypto.randomUUID()
+      },
+      payload: {
+        endpoints: [
+          {
+            endpointId,
+            manufacturerName:  'Azan Time',
+            friendlyName:      'Azan',
+            description:       'Azan prayer announcement doorbell',
+            displayCategories: ['DOORBELL'],
+            cookie:            {},
+            capabilities: [
+              {
+                type:      'AlexaInterface',
+                interface: 'Alexa',
+                version:   '3'
+              },
+              {
+                type:      'AlexaInterface',
+                interface: 'Alexa.PowerController',
+                version:   '3',
+                properties: {
+                  supported:           [{ name: 'powerState' }],
+                  proactivelyReported: false,
+                  retrievable:         false
+                }
+              },
+              {
+                type:                'AlexaInterface',
+                interface:           'Alexa.DoorbellEventSource',
+                version:             '3',
+                proactivelyReported: true
+              },
+              {
+                type:      'AlexaInterface',
+                interface: 'Alexa.EndpointHealth',
+                version:   '3',
+                properties: {
+                  supported:           [{ name: 'connectivity' }],
+                  proactivelyReported: true,
+                  retrievable:         true
+                }
+              }
+            ]
+          }
+        ],
+        scope: {
+          type:  'BearerToken',
+          token: token
+        }
+      }
+    }
+  };
+
+  const response = await axios.post(ALEXA_API_URL, payload, {
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    timeout: 10000
+  });
+
+  console.log(`✅ AddOrUpdateReport response: ${response.status}`);
+  return response.status;
+}
+
+// ── Periodic endpoint refresh ─────────────────────────────────────────────────
+// Call this from the scheduler every few hours to keep the endpoint binding
+// fresh with Alexa, preventing the 204 decay.
+async function refreshEndpointBinding(user) {
+  const [[dbUser]] = await db.query(
+    'SELECT event_token, event_token_expires, device_id FROM users WHERE id = ?',
+    [user.id]
+  );
+
+  if (!dbUser?.event_token || !dbUser?.device_id) {
+    console.warn(`⚠️ Cannot refresh endpoint for user ${user.id} — missing token or device`);
+    return;
+  }
+
+  let token = dbUser.event_token;
+  const expiresAt = dbUser.event_token_expires
+    ? new Date(dbUser.event_token_expires)
+    : null;
+
+  if (!expiresAt || expiresAt < new Date(Date.now() + 5 * 60 * 1000)) {
+    token = await refreshEventToken(user.id);
+  }
+
+  await sendAddOrUpdateReport(dbUser.device_id, token);
+}
+
+// ── KEEP-ALIVE DISABLED ──────────────────────────────────────────────────────
+// ChangeReport is INVALID for doorbell devices — Alexa returns 400.
+// Do not use. Kept as no-op for backward compatibility.
 async function sendSilentKeepAlive(user) {
-  console.log(`⚠️ sendSilentKeepAlive called but DISABLED — ChangeReport is invalid for doorbell devices`);
-  // Do nothing. ChangeReport on a DoorbellEventSource device returns 400.
-  // The proactive token refresh cron keeps the token fresh without this.
+  console.log(`⚠️ sendSilentKeepAlive called but DISABLED — use refreshEndpointBinding instead`);
 }
 
 // ── Token refresh ─────────────────────────────────────────────────────────────
@@ -136,13 +253,6 @@ async function refreshEventToken(userId) {
 
 // ── Payload builders ──────────────────────────────────────────────────────────
 
-// FIX 1: Added scope.BearerToken inside event.endpoint
-//   The Alexa DoorbellEventSource docs require the bearer token in the
-//   endpoint scope, not just in the HTTP Authorization header.
-//   See: https://developer.amazon.com/en-US/docs/alexa/device-apis/alexa-doorbelleventsource.html
-//
-// FIX 2: Changed cause.type from "APP_INTERACTION" to "PHYSICAL_INTERACTION"
-//   The Alexa docs example for DoorbellPress uses PHYSICAL_INTERACTION.
 function buildDoorbellEvent(endpointId, token) {
   return {
     context: {
@@ -176,48 +286,10 @@ function buildDoorbellEvent(endpointId, token) {
   };
 }
 
-// NOTE: buildChangeReport is kept for reference but should NOT be used
-// with doorbell-type devices — Alexa returns 400 INVALID_REQUEST_EXCEPTION.
-function buildChangeReport(endpointId, token) {
-  const now = new Date().toISOString();
-  return {
-    context: {
-      properties: [{
-        namespace:                'Alexa.EndpointHealth',
-        name:                     'connectivity',
-        value:                    { value: 'OK' },
-        timeOfSample:             now,
-        uncertaintyInMilliseconds: 0
-      }]
-    },
-    event: {
-      header: {
-        messageId:      crypto.randomUUID(),
-        namespace:      'Alexa',
-        name:           'ChangeReport',
-        payloadVersion: '3'
-      },
-      endpoint: {
-        scope: {
-          type:  'BearerToken',
-          token: token
-        },
-        endpointId
-      },
-      payload: {
-        change: {
-          cause: { type: 'APP_INTERACTION' },
-          properties: [{
-            namespace:                'Alexa.EndpointHealth',
-            name:                     'connectivity',
-            value:                    { value: 'OK' },
-            timeOfSample:             now,
-            uncertaintyInMilliseconds: 0
-          }]
-        }
-      }
-    }
-  };
-}
-
-module.exports = { triggerAlexaDevice, refreshEventToken, sendSilentKeepAlive };
+module.exports = {
+  triggerAlexaDevice,
+  refreshEventToken,
+  sendSilentKeepAlive,
+  refreshEndpointBinding,
+  sendAddOrUpdateReport
+};
