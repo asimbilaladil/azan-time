@@ -88,11 +88,11 @@ function initAlexa(proxyMode = false) {
     if (proxyMode || !savedCookie) {
       // Proxy mode: opens a web page where user logs in with Amazon
       options.proxyOnly = true;
-      options.proxyOwnIp = '0.0.0.0';
+      options.proxyOwnIp = process.env.ALEXA_PROXY_IP || '89.167.65.137';
       options.proxyPort = parseInt(process.env.ALEXA_PROXY_PORT || '3001');
       options.proxyLogLevel = 'info';
       console.log(`🌐 Alexa proxy starting on port ${options.proxyPort}`);
-      console.log(`   Open http://YOUR_SERVER_IP:${options.proxyPort} in browser to log in`);
+      console.log(`   Open http://${options.proxyOwnIp}:${options.proxyPort} in browser to log in`);
     } else {
       // Normal mode: use saved cookie
       options.cookie = savedCookie;
