@@ -80,47 +80,16 @@ async function triggerAlexaDevice(user, prayer) {
   }
 }
 
-// ── Silent keep-alive — sends a ChangeReport on EndpointHealth ───────────────
-// Uses the real doorbell device but sends a connectivity status update instead
-// of a DoorbellPress. Alexa makes no announcement — it just knows the device
-// is still online, which keeps the proactive event context alive.
+// ── KEEP-ALIVE REMOVED ───────────────────────────────────────────────────────
+// The silent keep-alive via ChangeReport does NOT work for doorbell devices.
+// Alexa docs: "The Alexa.DoorbellEventSource interface doesn't define any
+// proactively reportable properties." — so ChangeReport returns 400
+// INVALID_REQUEST_EXCEPTION. This function is kept as a no-op so any existing
+// callers don't crash, but it does nothing.
 async function sendSilentKeepAlive(user) {
-  try {
-    const [[dbUser]] = await db.query(
-      'SELECT event_token, event_token_expires FROM users WHERE id = ?',
-      [user.id]
-    );
-
-    const token = dbUser?.event_token;
-    if (!token) {
-      console.warn(`⚠️ No event_token for user ${user.id}, skipping keep-alive`);
-      return;
-    }
-
-    const expiresAt = dbUser?.event_token_expires
-      ? new Date(dbUser.event_token_expires)
-      : null;
-
-    if (!expiresAt || expiresAt < new Date(Date.now() + 5 * 60 * 1000)) {
-      console.log(`🔄 Token near expiry for user ${user.id}, refreshing before keep-alive...`);
-      await refreshEventToken(user.id);
-      return;
-    }
-
-    await axios.post(ALEXA_API_URL, buildChangeReport(user.device_id, token), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      timeout: 10000
-    });
-
-    console.log(`✅ Silent keep-alive sent for user ${user.id}`);
-  } catch (err) {
-    const status = err.response?.status;
-    console.warn(`⚠️ Silent keep-alive failed for user ${user.id} [${status}]:`, err.response?.data?.payload?.code || err.message);
-    throw err;
-  }
+  console.log(`⚠️ sendSilentKeepAlive called but DISABLED — ChangeReport is invalid for doorbell devices`);
+  // Do nothing. ChangeReport on a DoorbellEventSource device returns 400.
+  // The proactive token refresh cron keeps the token fresh without this.
 }
 
 // ── Token refresh ─────────────────────────────────────────────────────────────
@@ -167,10 +136,13 @@ async function refreshEventToken(userId) {
 
 // ── Payload builders ──────────────────────────────────────────────────────────
 
-// FIX: Added scope.BearerToken inside event.endpoint — required by Alexa docs
-// See: https://developer.amazon.com/en-US/docs/alexa/device-apis/alexa-doorbelleventsource.html
-// Without this, Alexa returns 202 (or 204) but cannot route the event to the
-// correct customer, so the routine never fires.
+// FIX 1: Added scope.BearerToken inside event.endpoint
+//   The Alexa DoorbellEventSource docs require the bearer token in the
+//   endpoint scope, not just in the HTTP Authorization header.
+//   See: https://developer.amazon.com/en-US/docs/alexa/device-apis/alexa-doorbelleventsource.html
+//
+// FIX 2: Changed cause.type from "APP_INTERACTION" to "PHYSICAL_INTERACTION"
+//   The Alexa docs example for DoorbellPress uses PHYSICAL_INTERACTION.
 function buildDoorbellEvent(endpointId, token) {
   return {
     context: {
@@ -204,6 +176,8 @@ function buildDoorbellEvent(endpointId, token) {
   };
 }
 
+// NOTE: buildChangeReport is kept for reference but should NOT be used
+// with doorbell-type devices — Alexa returns 400 INVALID_REQUEST_EXCEPTION.
 function buildChangeReport(endpointId, token) {
   const now = new Date().toISOString();
   return {
@@ -219,7 +193,7 @@ function buildChangeReport(endpointId, token) {
     event: {
       header: {
         messageId:      crypto.randomUUID(),
-        namespace:      'Alexa.ChangeReport',
+        namespace:      'Alexa',
         name:           'ChangeReport',
         payloadVersion: '3'
       },
