@@ -47,21 +47,9 @@ async function triggerAlexaDevice(user, prayer) {
       const status = response.status;
       console.log(`✅ Doorbell triggered ${user.device_id} (${prayer}) — ${status}`);
 
-      // SELF-HEALING: if we get 204 instead of 202, the endpoint binding
-      // has decayed. Send AddOrUpdateReport to re-register the endpoint,
-      // then retry the DoorbellPress.
-      if (status === 204 && attempt <= 2) {
-        console.log(`⚠️ Got 204 — endpoint binding stale. Sending AddOrUpdateReport to refresh...`);
-        try {
-          await sendAddOrUpdateReport(user.device_id, eventToken);
-          console.log(`✅ AddOrUpdateReport sent. Retrying DoorbellPress in 3s...`);
-          await new Promise(r => setTimeout(r, 3000));
-          continue; // retry the DoorbellPress
-        } catch (healErr) {
-          console.error(`❌ AddOrUpdateReport failed:`, healErr.response?.data || healErr.message);
-        }
-      }
-
+      // Both 202 and 204 are success responses from the EU event gateway.
+      // 202 = accepted (documented), 204 = no content (EU gateway normal).
+      // Either way, Alexa processes the DoorbellPress and fires the routine.
       return true;
     } catch (err) {
       const status = err.response?.status;
