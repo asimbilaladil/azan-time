@@ -103,8 +103,9 @@ async function preWarmTokens() {
 
 // ── Proactive token refresh — every 55 min before the 60 min expiry ──────────
 // This keeps the token always fresh without any keep-alive pings to Alexa.
-// Alexa's proactive event context stays alive as long as we send valid events
-// (prayer triggers) regularly — no separate keep-alive needed.
+// NO ChangeReport or DoorbellPress keep-alive — ChangeReport returns 400
+// INVALID_REQUEST_EXCEPTION for doorbell devices because DoorbellEventSource
+// has no proactively reportable properties.
 async function proactiveTokenRefresh() {
   try {
     const [users] = await db.query(`
@@ -138,6 +139,11 @@ async function logTrigger(userId, prayer, success, errorMessage = null) {
 }
 
 // ── Start all cron jobs ───────────────────────────────────────────────────────
+// ONLY three crons:
+//   1. Prayer detection — every minute
+//   2. Pre-warm tokens — every 5 minutes
+//   3. Proactive token refresh — every 55 minutes
+// NO keep-alive cron. ChangeReport is invalid for doorbell devices.
 function startScheduler() {
   console.log('⏰ Prayer scheduler started — running every minute');
 
@@ -150,6 +156,8 @@ function startScheduler() {
   // Proactive token refresh — every 55 minutes
   // Keeps token always valid without any Alexa keep-alive pings
   cron.schedule('*/55 * * * *', proactiveTokenRefresh);
+
+  // NO keep-alive cron — do NOT add one
 
   if (process.env.NODE_ENV === 'development') runScheduler();
 }
