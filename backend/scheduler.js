@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const db   = require('./database/mysql');
 const { checkPrayerTimeNow, getMosqueTimes } = require('./services/masjidService');
-const { triggerAlexaDevice, refreshEventToken } = require('./services/alexaTrigger');
+const { triggerAlexaDevice, refreshEventToken, refreshEndpointBinding } = require('./services/alexaTrigger');
 
 let isRunning = false;
 
@@ -101,11 +101,7 @@ async function preWarmTokens() {
   }
 }
 
-// ── Proactive token refresh — every 55 min before the 60 min expiry ──────────
-// This keeps the token always fresh without any keep-alive pings to Alexa.
-// NO ChangeReport or DoorbellPress keep-alive — ChangeReport returns 400
-// INVALID_REQUEST_EXCEPTION for doorbell devices because DoorbellEventSource
-// has no proactively reportable properties.
+// ── Proactive token refresh — every 55 min ───────────────────────────────────
 async function proactiveTokenRefresh() {
   try {
     const [users] = await db.query(`
@@ -126,6 +122,32 @@ async function proactiveTokenRefresh() {
   }
 }
 
+// ── Periodic endpoint refresh — every 4 hours ────────────────────────────────
+// Sends AddOrUpdateReport to Alexa to keep the doorbell endpoint binding fresh.
+// This prevents the 204 decay where Alexa forgets the endpoint-routine link.
+// Unlike ChangeReport (which returns 400 for doorbell devices), AddOrUpdateReport
+// is a valid proactive discovery event that Alexa explicitly supports.
+async function periodicEndpointRefresh() {
+  try {
+    const [users] = await db.query(`
+      SELECT id, device_id, event_token, event_token_expires, event_refresh_token
+      FROM users
+      WHERE is_active = TRUE AND device_id IS NOT NULL
+    `);
+
+    for (const user of users) {
+      try {
+        await refreshEndpointBinding(user);
+        console.log(`✅ Periodic endpoint refresh for user ${user.id}`);
+      } catch (e) {
+        console.error(`❌ Endpoint refresh failed for user ${user.id}:`, e.response?.data || e.message);
+      }
+    }
+  } catch (err) {
+    console.error('❌ Periodic endpoint refresh cron error:', err.message);
+  }
+}
+
 // ── Trigger log ───────────────────────────────────────────────────────────────
 async function logTrigger(userId, prayer, success, errorMessage = null) {
   try {
@@ -139,25 +161,23 @@ async function logTrigger(userId, prayer, success, errorMessage = null) {
 }
 
 // ── Start all cron jobs ───────────────────────────────────────────────────────
-// ONLY three crons:
-//   1. Prayer detection — every minute
-//   2. Pre-warm tokens — every 5 minutes
-//   3. Proactive token refresh — every 55 minutes
-// NO keep-alive cron. ChangeReport is invalid for doorbell devices.
 function startScheduler() {
   console.log('⏰ Prayer scheduler started — running every minute');
 
-  // Prayer detection — every minute
+  // 1. Prayer detection — every minute
   cron.schedule('* * * * *', runScheduler);
 
-  // Pre-warm tokens 30 min before prayer — every 5 minutes
+  // 2. Pre-warm tokens 30 min before prayer — every 5 minutes
   cron.schedule('*/5 * * * *', preWarmTokens);
 
-  // Proactive token refresh — every 55 minutes
-  // Keeps token always valid without any Alexa keep-alive pings
+  // 3. Proactive token refresh — every 55 minutes
   cron.schedule('*/55 * * * *', proactiveTokenRefresh);
 
-  // NO keep-alive cron — do NOT add one
+  // 4. Endpoint binding refresh — every 4 hours
+  // Sends AddOrUpdateReport to keep the doorbell endpoint alive with Alexa.
+  // This replaces the old ChangeReport keep-alive (which was invalid for
+  // doorbell devices and caused 400 INVALID_REQUEST_EXCEPTION).
+  cron.schedule('0 */4 * * *', periodicEndpointRefresh);
 
   if (process.env.NODE_ENV === 'development') runScheduler();
 }
