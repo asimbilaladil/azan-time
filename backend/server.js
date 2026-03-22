@@ -45,8 +45,8 @@ app.use(cors({
     ? [
         'https://azantime.de',
         'https://www.azantime.de',
-        /\.amazon\.com$/,
-        /\.amazonalexa\.com$/,
+        /\.amazon\.de/,
+        /\.amazonalexa\.de/,
       ]
     : true,
   credentials: true,
