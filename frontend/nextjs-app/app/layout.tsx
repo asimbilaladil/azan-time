@@ -4,7 +4,11 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Azan Time — Automatic Alexa Adhan',
   description: 'Automatically play the Adhan on your Alexa device at prayer times',
+  verification: {
+    google: "KualNeyolPCm_npLhSBek4dnIGs8A8FwbNhq1vTKlTk",
+  },
 }
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
