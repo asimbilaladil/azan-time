@@ -38,7 +38,7 @@ export default function TermsPage() {
 
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">7. Contact</h2>
-            <p>For any questions about these terms, contact us at: <a href="mailto:legal@azantime.de" className="text-yellow-400 underline">legal@azantime.de</a></p>
+            <p>For any questions about these terms, contact us at: <a href="mailto:legal@sautaladhan.com" className="text-yellow-400 underline">legal@sautaladhan.com</a></p>
           </div>
         </section>
       </div>

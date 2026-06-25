@@ -28,7 +28,7 @@ export default function PrivacyPage() {
 
           <div>
             <h2 className="text-xl font-semibold text-white mb-2">5. Contact</h2>
-            <p>For any privacy-related questions, contact us at: <a href="mailto:privacy@azantime.de" className="text-yellow-400 underline">privacy@azantime.de</a></p>
+            <p>For any privacy-related questions, contact us at: <a href="mailto:privacy@sautaladhan.com" className="text-yellow-400 underline">privacy@sautaladhan.com</a></p>
           </div>
         </section>
       </div>

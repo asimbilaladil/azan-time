@@ -144,7 +144,40 @@ function handleReportState(directive) {
 
 // ── Accept Grant — saves event token + refresh token ─────────────────────────
 async function handleAcceptGrant(directive) {
-  const grantCode = directive.directive.payload.grant.code;
+  const grantCode    = directive.directive.payload.grant.code;
+  const granteeToken = directive.directive.payload.grantee?.token;
+
+  // Identify which user is enabling the skill via their grantee bearer token
+  let userId;
+  if (granteeToken) {
+    try {
+      const { data: profile } = await axios.get('https://api.amazon.com/user/profile', {
+        headers: { Authorization: `Bearer ${granteeToken}` },
+        timeout: 5000
+      });
+      const [[matchedUser]] = await db.query(
+        'SELECT id FROM users WHERE amazon_user_id = ?', [profile.user_id]
+      );
+      if (matchedUser) {
+        userId = matchedUser.id;
+        console.log(`✅ AcceptGrant: identified user ${userId} from grantee token`);
+      }
+    } catch (e) {
+      console.warn('⚠️ AcceptGrant: could not identify user from grantee token:', e.message);
+    }
+  }
+
+  // Fallback: find the most recently active user with a device_id
+  if (!userId) {
+    const [[fallbackUser]] = await db.query(
+      'SELECT id FROM users WHERE device_id IS NOT NULL AND is_active = TRUE ORDER BY updated_at DESC LIMIT 1'
+    );
+    if (!fallbackUser) {
+      throw new Error('AcceptGrant: no eligible user found — complete device discovery first');
+    }
+    userId = fallbackUser.id;
+    console.warn(`⚠️ AcceptGrant: using fallback user ${userId}`);
+  }
 
   const response = await axios.post(
     'https://api.amazon.com/auth/o2/token',
@@ -161,19 +194,15 @@ async function handleAcceptGrant(directive) {
   const eventRefreshToken = response.data.refresh_token;
   const expiresIn         = response.data.expires_in;
 
-  const [[user]] = await db.query(
-    'SELECT id FROM users WHERE device_id IS NOT NULL LIMIT 1'
-  );
-
   await db.query(
     `UPDATE users
      SET event_token = ?, event_refresh_token = ?,
          event_token_expires = DATE_ADD(NOW(), INTERVAL ? SECOND)
      WHERE id = ?`,
-    [eventToken, eventRefreshToken, expiresIn, user.id]
+    [eventToken, eventRefreshToken, expiresIn, userId]
   );
 
-  console.log(`✅ AcceptGrant: event token saved for user ${user.id}, expires in ${expiresIn}s`);
+  console.log(`✅ AcceptGrant: event token saved for user ${userId}, expires in ${expiresIn}s`);
 
   return {
     event: {

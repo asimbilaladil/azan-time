@@ -3,7 +3,7 @@ const db     = require('../database/mysql');
 const { getCurrentPrayer } = require('../services/prayerService');
 const { decrypt }          = require('../services/encryption');
 
-const CDN = process.env.CDN_BASE_URL || 'https://cdn.azantime.de';
+const CDN = process.env.CDN_BASE_URL || 'https://cdn.sautaladhan.com';
 
 const AUDIO_URLS = {
   fajr: `${CDN}/fajr.mp3`,

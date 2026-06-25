@@ -568,7 +568,7 @@ function LandingContent() {
 
           {/* FOOTER */}
           <footer className="land-footer">
-            <div className="footer-copy">© 2026 Azan Time · azantime.de</div>
+            <div className="footer-copy">© 2026 Azan Time · sautaladhan.com</div>
             <div className="footer-links">
               <a href="/privacy" className="footer-link">PRIVACY</a>
               <a href="/terms" className="footer-link">TERMS</a>

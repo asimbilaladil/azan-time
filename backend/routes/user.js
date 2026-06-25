@@ -70,4 +70,32 @@ router.put('/settings', requireAuth,
   }
 );
 
+// GET /api/user/alexa-status — check if Alexa event token is valid
+router.get('/alexa-status', requireAuth, async (req, res) => {
+  try {
+    const [[user]] = await db.query(
+      `SELECT event_token, event_token_expires, event_refresh_token, alexa_device_serial
+       FROM users WHERE id = ?`,
+      [req.user.userId]
+    );
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const hasRefreshToken = !!user.event_refresh_token;
+    const expires = user.event_token_expires ? new Date(user.event_token_expires) : null;
+    const isValid = !!user.event_token && expires && expires > new Date();
+    const minutesLeft = expires ? Math.round((expires - Date.now()) / 60000) : null;
+
+    res.json({
+      linked: hasRefreshToken,
+      tokenValid: isValid,
+      expiresAt: expires,
+      minutesLeft,
+      hasDirectDevice: !!user.alexa_device_serial,
+      action: !hasRefreshToken ? 're-enable Alexa skill in app' : null,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

@@ -43,8 +43,8 @@ app.use(helmet({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? [
-        'https://azantime.de',
-        'https://www.azantime.de',
+        'https://sautaladhan.com',
+        'https://www.sautaladhan.com',
         /\.amazon\.com$/,
         /\.amazonalexa\.com$/,
       ]

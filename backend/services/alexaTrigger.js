@@ -204,24 +204,44 @@ async function refreshEventToken(userId) {
   );
 
   if (!user?.event_refresh_token) {
-    throw new Error('No event_refresh_token found — user must re-enable skill in Alexa app');
+    // Mark user so dashboard can show "re-link required"
+    await db.query(
+      'UPDATE users SET event_token = NULL, event_token_expires = NULL WHERE id = ?',
+      [userId]
+    );
+    throw new Error('No event_refresh_token — user must re-enable the Alexa skill');
   }
 
-  console.log(`🔑 Attempting token refresh for user ${userId}, refresh_token starts with: ${user.event_refresh_token.substring(0, 20)}...`);
+  console.log(`🔑 Refreshing event token for user ${userId}...`);
 
-  const response = await axios.post(
-    'https://api.amazon.com/auth/o2/token',
-    new URLSearchParams({
-      grant_type:    'refresh_token',
-      refresh_token: user.event_refresh_token,
-      client_id:     process.env.ALEXA_EVENT_CLIENT_ID,
-      client_secret: process.env.ALEXA_EVENT_CLIENT_SECRET,
-    }),
-    {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      timeout: 8000
+  let response;
+  try {
+    response = await axios.post(
+      'https://api.amazon.com/auth/o2/token',
+      new URLSearchParams({
+        grant_type:    'refresh_token',
+        refresh_token: user.event_refresh_token,
+        client_id:     process.env.ALEXA_EVENT_CLIENT_ID,
+        client_secret: process.env.ALEXA_EVENT_CLIENT_SECRET,
+      }),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 8000
+      }
+    );
+  } catch (err) {
+    const status = err.response?.status;
+    const detail = JSON.stringify(err.response?.data);
+    if (status === 400 || status === 401) {
+      // Refresh token is revoked — clear it so we don't keep retrying
+      await db.query(
+        'UPDATE users SET event_token = NULL, event_refresh_token = NULL, event_token_expires = NULL WHERE id = ?',
+        [userId]
+      );
+      throw new Error(`Event token revoked (${status}) — user must re-enable the Alexa skill. Detail: ${detail}`);
     }
-  );
+    throw new Error(`Token refresh HTTP ${status}: ${detail}`);
+  }
 
   const newToken        = response.data.access_token;
   const newRefreshToken = response.data.refresh_token;

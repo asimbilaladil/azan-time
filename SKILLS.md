@@ -29,9 +29,9 @@ Saut Al Adhan skill plays Adhan MP3 (Custom Skill)
 Before starting:
 
 - [ ] Amazon Developer account at [developer.amazon.com](https://developer.amazon.com) (same Amazon account as your Alexa device)
-- [ ] `azantime.de` is live with backend running (`pm2 status` shows all online)
+- [ ] `sautaladhan.com` is live with backend running (`pm2 status` shows all online)
 - [ ] LWA app created with `LWA_CLIENT_ID` and `LWA_CLIENT_SECRET` in `backend/.env`
-- [ ] `LWA_REDIRECT_URI=https://azantime.de/auth/callback` in `.env`
+- [ ] `LWA_REDIRECT_URI=https://sautaladhan.com/auth/callback` in `.env`
 
 ---
 
@@ -53,7 +53,7 @@ Before starting:
 1. In the skill, go to the **Smart Home** tab
 2. Set **Default endpoint** to:
    ```
-   https://azantime.de/alexa/smart-home
+   https://sautaladhan.com/alexa/smart-home
    ```
 3. Click **Save**
 
@@ -97,7 +97,7 @@ Before starting:
 
 1. Open the **Alexa app** on your phone
 2. Go to **More → Skills & Games**, search for "Azan Time", tap **Enable**
-3. Complete the account linking flow (redirects to azantime.de)
+3. Complete the account linking flow (redirects to sautaladhan.com)
 4. Say **"Alexa, discover devices"** or go to **Devices → +**
 5. ✅ **"Azan"** should appear as a switch in your Alexa app
 
@@ -140,7 +140,7 @@ Before starting:
 2. Select **HTTPS**
 3. Set **Default Region** to:
    ```
-   https://azantime.de/alexa/custom
+   https://sautaladhan.com/alexa/custom
    ```
 4. SSL certificate type: **My development endpoint has a certificate from a trusted certificate authority**
 5. Click **Save Endpoints**
@@ -238,13 +238,13 @@ Backend turns ON "Azan" switch
 
 ## Final Checklist
 
-- [ ] Smart Home skill created with endpoint `azantime.de/alexa/smart-home`
+- [ ] Smart Home skill created with endpoint `sautaladhan.com/alexa/smart-home`
 - [ ] Smart Home account linking configured
 - [ ] `ALEXA_SMART_HOME_SKILL_ID` added to `.env`
 - [ ] "Azan" device discovered in Alexa app
 - [ ] Custom skill created with invocation name `saut al adhan`
 - [ ] AudioPlayer interface enabled
-- [ ] Custom skill endpoint set to `azantime.de/alexa/custom`
+- [ ] Custom skill endpoint set to `sautaladhan.com/alexa/custom`
 - [ ] Interaction model JSON saved and built
 - [ ] Custom skill account linking configured
 - [ ] `ALEXA_SKILL_ID` added to `.env`
@@ -256,7 +256,7 @@ Backend turns ON "Azan" switch
 ## Troubleshooting
 
 **"Azan" device not discovered**
-- Check that the Smart Home endpoint is reachable: `curl https://azantime.de/alexa/smart-home`
+- Check that the Smart Home endpoint is reachable: `curl https://sautaladhan.com/alexa/smart-home`
 - Check backend logs: `pm2 logs azantime-backend --lines 30`
 
 **AudioPlayer.Play not showing in simulator**

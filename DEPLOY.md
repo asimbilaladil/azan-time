@@ -66,12 +66,12 @@ Fill in ALL values in `backend/.env`:
 | `ENCRYPTION_KEY` | Run: `openssl rand -hex 32` |
 | `ALEXA_SKILL_ID` | Alexa Developer Console |
 | `ALEXA_SMART_HOME_SKILL_ID` | Alexa Developer Console |
-| `CDN_BASE_URL` | `https://cdn.azantime.de` |
+| `CDN_BASE_URL` | `https://cdn.sautaladhan.com` |
 
 ```bash
 # Frontend
 cp frontend/nextjs-app/.env.local.example frontend/nextjs-app/.env.local
-# This file just needs: NEXT_PUBLIC_API_URL=https://azantime.de/api
+# This file just needs: NEXT_PUBLIC_API_URL=https://sautaladhan.com/api
 ```
 
 ---
@@ -87,7 +87,7 @@ sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 
 # Get SSL certificate (if not done already)
-sudo certbot --nginx -d azantime.de -d www.azantime.de
+sudo certbot --nginx -d sautaladhan.com -d www.sautaladhan.com
 
 # Reload
 sudo systemctl reload nginx
@@ -118,19 +118,19 @@ This starts:
 
 ```bash
 # Health check
-curl https://azantime.de/health
+curl https://sautaladhan.com/health
 # Expected: {"status":"ok","ts":"..."}
 
 # Cities list
-curl https://azantime.de/api/cities
+curl https://sautaladhan.com/api/cities
 # Expected: JSON array with 20 cities
 
 # Auth redirect
-curl -I https://azantime.de/api/auth/lwa
+curl -I https://sautaladhan.com/api/auth/lwa
 # Expected: 302 redirect to amazon.com
 
 # Frontend
-curl -I https://azantime.de/connect
+curl -I https://sautaladhan.com/connect
 # Expected: 200 OK
 
 # Check all containers running
@@ -209,7 +209,7 @@ After the server is running:
 ### Smart Home Skill
 1. Go to https://developer.amazon.com/alexa/console/ask
 2. Create Skill → **Smart Home**
-3. Endpoint: `https://azantime.de/alexa/smart-home`
+3. Endpoint: `https://sautaladhan.com/alexa/smart-home`
 4. Account Linking → same LWA credentials
 5. Copy Skill ID → add to `backend/.env` as `ALEXA_SMART_HOME_SKILL_ID`
 6. Redeploy: `docker compose up -d --build`
@@ -217,7 +217,7 @@ After the server is running:
 ### Custom Skill
 1. Create Skill → **Custom** → Provision your own
 2. Invocation name: `azan time`
-3. Endpoint HTTPS: `https://azantime.de/alexa/custom`
+3. Endpoint HTTPS: `https://sautaladhan.com/alexa/custom`
 4. Enable **AudioPlayer** in Interfaces tab
 5. Account Linking → same LWA credentials
 6. Copy Skill ID → add to `.env` as `ALEXA_SKILL_ID`
@@ -226,7 +226,7 @@ After the server is running:
 ### Audio Files (Cloudflare R2)
 1. Create R2 bucket: `azantime-audio`
 2. Upload: `fajr.mp3`, `dhuhr.mp3`, `asr.mp3`, `maghrib.mp3`, `isha.mp3`
-3. Add custom domain: `cdn.azantime.de`
+3. Add custom domain: `cdn.sautaladhan.com`
 4. Enable public access + CORS (AllowedOrigins: ["*"], Methods: GET, HEAD)
 
 ---

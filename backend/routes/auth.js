@@ -28,7 +28,7 @@ router.get('/callback', async (req, res) => {
       tokens
     );
     // Redirect to frontend with JWT in query (frontend stores in localStorage)
-    res.redirect(`https://azantime.de/connect?token=${jwtToken}`);
+    res.redirect(`https://sautaladhan.com/connect?token=${jwtToken}`);
   } catch (err) {
     console.error('Auth callback exception:', err.message);
     res.redirect('/?error=auth_failed');
