@@ -37,9 +37,9 @@ docker compose version
 ## Step 2 — Clone the Repository
 
 ```bash
-sudo mkdir -p /var/www/azantime
-sudo chown deploy:deploy /var/www/azantime
-cd /var/www/azantime
+sudo mkdir -p /var/www/sautaladhan
+sudo chown deploy:deploy /var/www/sautaladhan
+cd /var/www/sautaladhan
 
 git clone https://github.com/YOUR_USERNAME/azan-time.git .
 ```
@@ -79,8 +79,8 @@ cp frontend/nextjs-app/.env.local.example frontend/nextjs-app/.env.local
 ## Step 4 — Configure Nginx
 
 ```bash
-sudo cp nginx/azantime.conf /etc/nginx/sites-available/azantime
-sudo ln -sf /etc/nginx/sites-available/azantime /etc/nginx/sites-enabled/azantime
+sudo cp nginx/sautaladhan.conf /etc/nginx/sites-available/sautaladhan
+sudo ln -sf /etc/nginx/sites-available/sautaladhan /etc/nginx/sites-enabled/sautaladhan
 sudo rm -f /etc/nginx/sites-enabled/default
 
 # Test config
@@ -98,7 +98,7 @@ sudo systemctl reload nginx
 ## Step 5 — Build and Start Everything
 
 ```bash
-cd /var/www/azantime
+cd /var/www/sautaladhan
 
 # Build images and start all containers
 docker compose up -d --build
@@ -108,9 +108,9 @@ docker compose logs -f
 ```
 
 This starts:
-- `azantime-mysql` — MySQL 8 on internal network (auto-migrated from `001_init.sql`)
-- `azantime-backend` — Express API on port 3000
-- `azantime-frontend` — Next.js on port 3001
+- `sautaladhan-mysql` — MySQL 8 on internal network (auto-migrated from `001_init.sql`)
+- `sautaladhan-backend` — Express API on port 3000
+- `sautaladhan-frontend` — Next.js on port 3001
 
 ---
 
@@ -160,7 +160,7 @@ docker compose restart backend
 
 # Enter a container shell
 docker compose exec backend sh
-docker compose exec mysql mysql -u azantime_user -p azantime
+docker compose exec mysql mysql -u sautaladhan_user -p sautaladhan
 
 # Check prayer engine manually
 docker compose exec backend node test-prayer.js
@@ -182,7 +182,7 @@ docker compose up -d --build
 
 ```bash
 # Enter MySQL CLI
-docker compose exec mysql mysql -u azantime_user -p azantime
+docker compose exec mysql mysql -u sautaladhan_user -p sautaladhan
 
 # Inside MySQL:
 SELECT COUNT(*) FROM cities;     -- should be 20
@@ -224,7 +224,7 @@ After the server is running:
 7. Redeploy
 
 ### Audio Files (Cloudflare R2)
-1. Create R2 bucket: `azantime-audio`
+1. Create R2 bucket: `sautaladhan-audio`
 2. Upload: `fajr.mp3`, `dhuhr.mp3`, `asr.mp3`, `maghrib.mp3`, `isha.mp3`
 3. Add custom domain: `cdn.sautaladhan.com`
 4. Enable public access + CORS (AllowedOrigins: ["*"], Methods: GET, HEAD)
@@ -249,9 +249,9 @@ docker compose ps
 **Alexa skill not triggering?**
 ```bash
 # Check trigger log
-docker compose exec mysql mysql -u azantime_user -p azantime \
+docker compose exec mysql mysql -u sautaladhan_user -p sautaladhan \
   -e "SELECT * FROM trigger_log ORDER BY triggered_at DESC LIMIT 5;"
 # Check user has device_id set (needs to discover device via Alexa first)
-docker compose exec mysql mysql -u azantime_user -p azantime \
+docker compose exec mysql mysql -u sautaladhan_user -p sautaladhan \
   -e "SELECT id, city_id, device_id, is_active FROM users;"
 ```

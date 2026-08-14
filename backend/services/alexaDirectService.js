@@ -12,11 +12,18 @@
  * 
  * Setup (one-time):
  *   1. Start the server with ALEXA_PROXY=true
- *   2. Open http://YOUR_SERVER_IP:3001 in a browser
- *   3. Log in with your Amazon account
- *   4. Cookie is saved automatically to /var/lib/azantime/alexa-cookie.json
+ *   2. SSH tunnel to the server — do NOT expose this port publicly:
+ *        ssh -L 3001:localhost:3001 you@your-server
+ *   3. Open http://localhost:3001 in your own browser and log in with Amazon
+ *   4. Cookie is saved automatically to /var/lib/sautaladhan/alexa-cookie.json
  *   5. Restart server normally — it will use the saved cookie
- * 
+ *
+ * SECURITY: the login proxy page mirrors Amazon's real sign-in form. If this
+ * port is ever reachable from the public internet, it WILL be flagged as a
+ * phishing page by automated scanners (this happened to the previous domain).
+ * proxyOwnIp below defaults to 127.0.0.1 for this reason — never override it
+ * with a public IP, and never open this port in the firewall.
+ *
  * The cookie auto-refreshes. If it ever expires, repeat step 2-4.
  */
 
@@ -24,7 +31,7 @@ const Alexa = require('alexa-remote2');
 const fs    = require('fs');
 const path  = require('path');
 
-const COOKIE_PATH = process.env.ALEXA_COOKIE_PATH || '/var/lib/azantime/alexa-cookie.json';
+const COOKIE_PATH = process.env.ALEXA_COOKIE_PATH || '/var/lib/sautaladhan/alexa-cookie.json';
 const SKILL_INVOCATION = 'öffne azan time'; // German: "open azan time" — adjust for your locale
 
 let alexa = null;
@@ -86,13 +93,16 @@ function initAlexa(proxyMode = false) {
     };
 
     if (proxyMode || !savedCookie) {
-      // Proxy mode: opens a web page where user logs in with Amazon
+      // Proxy mode: opens a web page where user logs in with Amazon.
+      // Hard-locked to 127.0.0.1 — access it via SSH tunnel only, never
+      // expose this publicly (see security note above).
       options.proxyOnly = true;
-      options.proxyOwnIp = process.env.ALEXA_PROXY_IP || '89.167.65.137';
+      options.proxyOwnIp = '127.0.0.1';
       options.proxyPort = parseInt(process.env.ALEXA_PROXY_PORT || '3001');
       options.proxyLogLevel = 'info';
-      console.log(`🌐 Alexa proxy starting on port ${options.proxyPort}`);
-      console.log(`   Open http://${options.proxyOwnIp}:${options.proxyPort} in browser to log in`);
+      console.log(`🌐 Alexa proxy starting on port ${options.proxyPort} (localhost only)`);
+      console.log(`   Tunnel: ssh -L ${options.proxyPort}:localhost:${options.proxyPort} you@your-server`);
+      console.log(`   Then open http://localhost:${options.proxyPort} in your own browser to log in`);
     } else {
       // Normal mode: use saved cookie
       options.cookie = savedCookie;

@@ -90,7 +90,7 @@ Before starting:
 
 3. Restart backend:
    ```bash
-   pm2 restart azantime-backend
+   pm2 restart sautaladhan-backend
    ```
 
 ### 1.5 Test — Discover the Azan Device
@@ -202,7 +202,7 @@ Same as the Smart Home skill:
 
 3. Restart backend:
    ```bash
-   pm2 restart azantime-backend
+   pm2 restart sautaladhan-backend
    ```
 
 ### 2.8 Test in Simulator
@@ -257,7 +257,7 @@ Backend turns ON "Azan" switch
 
 **"Azan" device not discovered**
 - Check that the Smart Home endpoint is reachable: `curl https://sautaladhan.com/alexa/smart-home`
-- Check backend logs: `pm2 logs azantime-backend --lines 30`
+- Check backend logs: `pm2 logs sautaladhan-backend --lines 30`
 
 **AudioPlayer.Play not showing in simulator**
 - Make sure AudioPlayer interface is enabled and model was rebuilt after enabling it
@@ -265,7 +265,7 @@ Backend turns ON "Azan" switch
 
 **Routine not firing**
 - Make sure the routine trigger is set to the Azan **switch** device, not a scene
-- Check `pm2 logs azantime-backend` around prayer time to confirm the trigger fires
+- Check `pm2 logs sautaladhan-backend` around prayer time to confirm the trigger fires
 
 **Backend crash after adding Skill IDs**
 - Verify `.env` has no extra spaces around the `=` sign

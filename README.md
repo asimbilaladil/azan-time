@@ -74,7 +74,7 @@ azan-time/
 │       ├── alexa-setup/page.tsx     # Skill setup guide
 │       ├── privacy/page.tsx
 │       └── terms/page.tsx
-├── nginx/azantime.conf              # Nginx reverse proxy config
+├── nginx/sautaladhan.conf           # Nginx reverse proxy config
 ├── docker-compose.yml
 ├── DEPLOY.md                        # Full deployment guide
 └── SKILLS.md                        # Alexa skill setup guide
@@ -111,8 +111,8 @@ NODE_ENV=production
 # Database
 DB_HOST=mysql
 DB_PORT=3306
-DB_NAME=azantime
-DB_USER=azantime_user
+DB_NAME=sautaladhan
+DB_USER=sautaladhan_user
 DB_PASSWORD=<strong password>
 DB_ROOT_PASSWORD=<strong root password>
 
@@ -168,7 +168,7 @@ cp frontend/nextjs-app/.env.local.example frontend/nextjs-app/.env.local
 # .env.local only needs: NEXT_PUBLIC_API_URL=https://sautaladhan.com/api
 
 # 3. SSL + Nginx
-sudo cp nginx/azantime.conf /etc/nginx/sites-available/sautaladhan
+sudo cp nginx/sautaladhan.conf /etc/nginx/sites-available/sautaladhan
 sudo ln -sf /etc/nginx/sites-available/sautaladhan /etc/nginx/sites-enabled/
 sudo certbot --nginx -d sautaladhan.com -d www.sautaladhan.com
 sudo systemctl reload nginx
@@ -261,12 +261,12 @@ If the token gets revoked (user disabled the skill), it is cleared from the data
 | Azan stops after a few hours | `GET /api/user/alexa-status` — if `linked: false`, re-enable the Alexa skill in the Alexa app |
 | Alexa device not discovered | Complete account linking in Alexa app, then ask Alexa to discover devices |
 | Adhan not playing | Check Routine triggers on "Azan" switch turned ON; confirm AudioPlayer interface is enabled on custom skill |
-| Wrong prayer times | Check `mosque_guid` is set: `docker compose exec mysql mysql -u azantime_user -p azantime -e "SELECT id, mosque_guid FROM users;"` |
+| Wrong prayer times | Check `mosque_guid` is set: `docker compose exec mysql mysql -u sautaladhan_user -p sautaladhan -e "SELECT id, mosque_guid FROM users;"` |
 | MySQL not ready on first boot | Wait 20–30s for MySQL to fully initialize |
 
 ```bash
 # View live trigger log
-docker compose exec mysql mysql -u azantime_user -p azantime \
+docker compose exec mysql mysql -u sautaladhan_user -p sautaladhan \
   -e "SELECT * FROM trigger_log ORDER BY triggered_at DESC LIMIT 10;"
 
 # Watch scheduler output
